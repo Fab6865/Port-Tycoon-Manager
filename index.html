@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maritime Tycoon</title>
+    <title>Empire Maritime - Gestionnaire de Port</title>
     <style>
         * {
             margin: 0;
@@ -14,1952 +14,1692 @@
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
             color: white;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 100vw;
+            min-height: 100vh;
+            padding: 10px;
         }
 
         .header {
-            background: rgba(0,0,0,0.3);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #4a90e2;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-title {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-bottom: 10px;
-        }
-
-        .stat-value {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-
-        .debt {
-            color: #ff6b6b;
-        }
-
-        .menu-container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 30px;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
         }
 
-        .menu-btn {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .resources {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .resource {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .fuel-resource {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+        }
+
+        .navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 8px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             border: none;
-            padding: 15px 30px;
             border-radius: 25px;
             color: white;
-            font-size: 1.1em;
+            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 12px;
         }
 
-        .menu-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        .nav-btn:hover, .nav-btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
 
-        .menu-btn.fleet { background: linear-gradient(45deg, #2196F3, #1976D2); }
-        .menu-btn.shop { background: linear-gradient(45deg, #FF9800, #F57C00); }
-        .menu-btn.bank { background: linear-gradient(45deg, #9C27B0, #7B1FA2); }
+        .nav-btn.active {
+            background: linear-gradient(45deg, #00d4ff, #0984e3);
+        }
 
         .screen {
             display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            min-height: 60vh;
         }
 
         .screen.active {
             display: block;
+            animation: fadeIn 0.5s ease-in-out;
         }
 
-        .back-btn {
-            background: #607D8B;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: white;
-            cursor: pointer;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ships-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
             margin-bottom: 20px;
         }
 
-        .content-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: rgba(255,255,255,0.1);
+        .ship-card {
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
         }
 
-        .destination-card.locked {
-            opacity: 0.6;
-            border-left-color: #666;
+        .ship-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
         }
 
-        .xp-requirement {
-            color: #ff9800;
+        .ship-card.traveling {
+            border-color: #fdcb6e;
+            background: rgba(253, 203, 110, 0.2);
+        }
+
+        .ship-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .ship-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
             font-weight: bold;
         }
 
-        .mission-timer {
-            color: #2196F3;
-            font-weight: bold;
+        .status-available {
+            background: #00b894;
+            color: white;
         }
 
-        .fleet-tabs {
+        .status-traveling {
+            background: #fdcb6e;
+            color: #2d3436;
+        }
+
+        .ship-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .destinations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .destination-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .destination-card:hover {
+            border-color: #00d4ff;
+            transform: scale(1.02);
+        }
+
+        .destination-card.insufficient-fuel {
+            border-color: #d63031;
+            background: rgba(214, 48, 49, 0.2);
+        }
+
+        .destination-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .destination-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .fuel-cost {
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            padding: 5px 8px;
+            margin: 5px 0;
+            font-weight: bold;
+            color: #ffc107;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #00d4ff, #0984e3);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover, .btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn:disabled {
+            background: #636e72;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #0984e3);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .ship-animation {
+            position: relative;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to right, #0984e3, #74b9ff, #0984e3);
+            border-radius: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .sailing-ship {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            animation: sailing 3s ease-in-out infinite;
+            z-index: 2;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(255,255,255,0.1) 0px,
+                rgba(255,255,255,0.2) 10px,
+                rgba(255,255,255,0.1) 20px
+            );
+            animation: waves 2s linear infinite;
+        }
+
+        @keyframes sailing {
+            0%, 100% { transform: translateY(-50%) rotate(-2deg); }
+            50% { transform: translateY(-50%) rotate(2deg); }
+        }
+
+        @keyframes waves {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ship-trail {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateY(-50%);
+            animation: trail 4s ease-in-out infinite;
+        }
+
+        @keyframes trail {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .shop-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .shop-item h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fdcb6e;
+            margin: 10px 0;
+        }
+
+        .refinery-section {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px solid #ffc107;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .refinery-title {
+            color: #ffc107;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fuel-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .fuel-option {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .fuel-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffc107;
+            margin: 10px 0;
+        }
+
+        .save-buttons {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
 
-        .fleet-tab {
-            background: rgba(255,255,255,0.1);
+        .save-btn {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(45deg, #00b894, #00a085);
             border: none;
-            padding: 10px 20px;
             border-radius: 20px;
             color: white;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .fleet-tab.active {
-            background: #4CAF50;
-        }
-
-        .fleet-tab:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .fleet-tab.active:hover {
-            background: #45a049;
-        }
-
-        .ship-card, .destination-card, .upgrade-card {
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            border-left: 4px solid #4CAF50;
-        }
-
-        .mission-btn, .upgrade-btn, .bank-btn {
-            background: #4CAF50;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 15px;
-            color: white;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .mission-btn:disabled, .upgrade-btn:disabled, .bank-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-
-        .progress-bar {
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 40px;
-            background: linear-gradient(90deg, #1e3c72 0%, #2a5298 50%, #4a90e2 100%);
-            border-radius: 20px;
-            overflow: hidden;
-            margin: 10px 0;
-            position: relative;
-            border: 2px solid rgba(255,255,255,0.3);
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
         }
 
-        .progress-ship {
+        .modal-content {
             position: absolute;
             top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-            transition: left 0.3s ease;
-            z-index: 10;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d3436;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
-        .progress-waves {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 8px;
-            background: repeating-linear-gradient(
-                90deg,
-                rgba(255,255,255,0.1) 0px,
-                rgba(255,255,255,0.1) 10px,
-                rgba(255,255,255,0.2) 10px,
-                rgba(255,255,255,0.2) 20px
-            );
-            animation: waves 2s linear infinite;
-        }
-
-        @keyframes waves {
-            0% { transform: translateX(-20px); }
-            100% { transform: translateX(0px); }
-        }
-
-        .input-group {
-            margin: 10px 0;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            margin-top: 5px;
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255,255,255,0.6);
-        }
-
-        .loan-info {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #ddd;
         }
 
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #4CAF50;
+            background: #00b894;
+            color: white;
             padding: 15px 20px;
             border-radius: 10px;
-            color: white;
-            z-index: 1000;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        /* Bouton son */
-        .sound-toggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.7);
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.5em;
-            cursor: pointer;
             z-index: 1001;
-            transition: all 0.3s ease;
+            display: none;
         }
 
-        .sound-toggle:hover {
-            background: rgba(0,0,0,0.9);
-            transform: scale(1.1);
+        .admin-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #e17055;
         }
 
-        .sound-toggle.muted {
-            opacity: 0.5;
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .admin-input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+
+        .admin-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .admin-btn {
+            background: linear-gradient(45deg, #e17055, #d63031);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .admin-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .admin-warning {
+            background: rgba(231, 112, 85, 0.2);
+            border: 1px solid #e17055;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #fdcb6e;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .resources {
+                justify-content: center;
+            }
+
+            .nav-btn {
+                font-size: 11px;
+                padding: 10px 6px;
+            }
+
+            .ships-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .destinations-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🚢 Maritime Tycoon 🏗️</h1>
-        <p>Gérez votre empire portuaire !</p>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚢 Empire Maritime</div>
+            <div class="resources">
+                <div class="resource">💰 <span id="money">1000</span>€</div>
+                <div class="resource fuel-resource">⛽ <span id="fuel">100</span>L</div>
+                <div class="resource">⚓ <span id="reputation">0</span></div>
+                <div class="resource">🏆 <span id="level">1</span></div>
+            </div>
+        </div>
+
+        <div class="save-buttons">
+            <button class="save-btn" onclick="saveGame()">💾 Sauvegarder</button>
+            <button class="save-btn" onclick="loadGame()">📂 Charger</button>
+            <button class="save-btn" onclick="resetGame()" style="background: linear-gradient(45deg, #e17055, #d63031);">🔄 Reset</button>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-btn active" onclick="showScreen('fleet')">🚢 Flotte</button>
+            <button class="nav-btn" onclick="showScreen('destinations')">🗺️ Destinations</button>
+            <button class="nav-btn" onclick="showScreen('shop')">🛒 Boutique</button>
+            <button class="nav-btn" onclick="showScreen('admin')">⚙️ Admin</button>
+            <button class="nav-btn" onclick="showScreen('stats')">📊 Statistiques</button>
+        </div>
+
+        <div id="fleet-screen" class="screen active">
+            <h2>🚢 Votre Flotte</h2>
+            <div id="ships-container" class="ships-grid"></div>
+        </div>
+
+        <div id="destinations-screen" class="screen">
+            <h2>🗺️ Destinations Disponibles</h2>
+            <div id="selected-ship-info"></div>
+            <div id="destinations-container" class="destinations-grid"></div>
+        </div>
+
+        <div id="shop-screen" class="screen">
+            <h2>🛒 Boutique Maritime</h2>
+            
+            <div class="refinery-section">
+                <div class="refinery-title">
+                    <span>⛽</span> Raffinerie de Carburant
+                </div>
+                <p style="opacity: 0.9; margin-bottom: 15px;">Achetez du gasoil pour alimenter vos navires. Chaque destination nécessite du carburant pour le voyage.</p>
+                
+                <div class="fuel-controls">
+                    <div class="fuel-option">
+                        <h4>Petit Plein</h4>
+                        <div class="fuel-amount">50L</div>
+                        <div class="price">100€</div>
+                        <button class="btn" onclick="buyFuel(50, 100)">Acheter</button>
+                    </div>
+                    <div class="fuel-option">
+                        <h4>Plein Moyen</h4>
+                        <div class="fuel-amount">150L</div>
+                        <div class="price">280€</div>
+                        <button class="btn" onclick="buyFuel(150, 280)">Acheter</button>
+                    </div>
+                    <div class="fuel-option">
+                        <h4>Grand Plein</h4>
+                        <div class="fuel-amount">500L</div>
+                        <div class="price">900€</div>
+                        <button class="btn" onclick="buyFuel(500, 900)">Acheter</button>
+                    </div>
+                    <div class="fuel-option">
+                        <h4>Plein Maximum</h4>
+                        <div class="fuel-amount">1000L</div>
+                        <div class="price">1600€</div>
+                        <button class="btn" onclick="buyFuel(1000, 1600)">Acheter</button>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 20px;">🚢 Navires</h3>
+            <div id="shop-container" class="shop-grid"></div>
+        </div>
+
+        <div id="admin-screen" class="screen">
+            <h2>⚙️ Panneau d'Administration</h2>
+            <div class="admin-warning">
+                ⚠️ ATTENTION : Ces paramètres modifient l'équilibre du jeu. Utilisez avec précaution !
+            </div>
+            
+            <div class="admin-grid">
+                <div class="admin-card">
+                    <h3>💰 Économie Générale</h3>
+                    <label>Argent de départ :</label>
+                    <input type="number" id="startMoney" class="admin-input" placeholder="1000" value="1000">
+                    
+                    <label>Gasoil de départ :</label>
+                    <input type="number" id="startFuel" class="admin-input" placeholder="100" value="100">
+                    
+                    <label>Multiplicateur gains :</label>
+                    <input type="number" id="rewardMultiplier" class="admin-input" placeholder="1.0" value="1.0" step="0.1">
+                    
+                    <button class="admin-btn" onclick="applyEconomySettings()">Appliquer Économie</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>🚢 Prix des Navires</h3>
+                    <label>Cargo Standard :</label>
+                    <input type="number" id="ship1Price" class="admin-input" placeholder="2500" value="2500">
+                    
+                    <label>Cargo Rapide :</label>
+                    <input type="number" id="ship2Price" class="admin-input" placeholder="5000" value="5000">
+                    
+                    <label>Porte-conteneurs :</label>
+                    <input type="number" id="ship3Price" class="admin-input" placeholder="15000" value="15000">
+                    
+                    <label>Yacht de Luxe :</label>
+                    <input type="number" id="ship4Price" class="admin-input" placeholder="25000" value="25000">
+                    
+                    <button class="admin-btn" onclick="applyShipPrices()">Appliquer Prix Navires</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>🗺️ Gains Destinations</h3>
+                    <label>Port Local :</label>
+                    <input type="number" id="dest1Reward" class="admin-input" placeholder="50" value="50">
+                    
+                    <label>Marseille :</label>
+                    <input type="number" id="dest2Reward" class="admin-input" placeholder="150" value="150">
+                    
+                    <label>Londres :</label>
+                    <input type="number" id="dest3Reward" class="admin-input" placeholder="400" value="400">
+                    
+                    <label>New York :</label>
+                    <input type="number" id="dest4Reward" class="admin-input" placeholder="1200" value="1200">
+                    
+                    <label>Tokyo :</label>
+                    <input type="number" id="dest5Reward" class="admin-input" placeholder="2500" value="2500">
+                    
+                    <label>Singapour :</label>
+                    <input type="number" id="dest6Reward" class="admin-input" placeholder="1800" value="1800">
+                    
+                    <button class="admin-btn" onclick="applyDestinationRewards()">Appliquer Destinations</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>⛽ Prix du Carburant</h3>
+                    <label>Prix par litre :</label>
+                    <input type="number" id="fuelPrice" class="admin-input" placeholder="2" value="2" step="0.1">
+                    
+                    <button class="admin-btn" onclick="applyFuelSettings()">Appliquer Carburant</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>🎮 Actions Rapides</h3>
+                    <button class="admin-btn" onclick="addMoney()">+1000€</button>
+                    <button class="admin-btn" onclick="addFuel()">+500L Gasoil</button>
+                    <button class="admin-btn" onclick="maxReputation()">Max Réputation</button>
+                    <button class="admin-btn" onclick="resetToDefaults()">Réinitialiser Paramètres</button>
+                    <button class="admin-btn" onclick="exportSettings()">Exporter Config</button>
+                    <button class="admin-btn" onclick="importSettings()">Importer Config</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="stats-screen" class="screen">
+            <h2>📊 Statistiques de l'Empire</h2>
+            <div id="stats-container"></div>
+        </div>
     </div>
 
-    <!-- Bouton son -->
-    <button id="sound-toggle" class="sound-toggle" onclick="toggleSound()">🔊</button>
-
-    <!-- Écran principal -->
-    <div id="main-screen" class="screen active">
-        <div class="stats-container">
-            <div class="stat-card">
-                <div class="stat-title">💰 Argent</div>
-                <div class="stat-value" id="money">10000</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">⭐ Expérience</div>
-                <div class="stat-value" id="xp">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">🏦 Épargne</div>
-                <div class="stat-value" id="savings">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">📈 Revenu Passif</div>
-                <div class="stat-value" id="passive-income">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">💸 Dettes</div>
-                <div class="stat-value debt" id="debt">0</div>
-            </div>
-        </div>
-
-        <!-- Récompense quotidienne -->
-        <div style="max-width: 600px; margin: 20px auto;">
-            <div class="card" style="background: rgba(255, 193, 7, 0.1); border-left: 4px solid #FFC107; text-align: center;">
-                <h3>🎁 Récompense Quotidienne</h3>
-                <div id="main-daily-reward-info"></div>
-            </div>
-        </div>
-
-        <div class="menu-container">
-            <button class="menu-btn fleet" onclick="showScreen('fleet')">🚢 Gestion Flotte</button>
-            <button class="menu-btn shop" onclick="showScreen('shop')">🛒 Boutique</button>
-            <button class="menu-btn bank" onclick="showScreen('bank')">🏦 Banque</button>
-        </div>
-
-        <!-- Options de sauvegarde -->
-        <div style="max-width: 600px; margin: 20px auto;">
-            <div class="card" style="background: rgba(100, 100, 100, 0.1); border-left: 4px solid #607D8B; text-align: center;">
-                <h3>⚙️ Options de Jeu</h3>
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
-                    <button class="menu-btn" onclick="forceSave()" style="background: linear-gradient(45deg, #4CAF50, #45a049); padding: 10px 20px; font-size: 0.9em;">
-                        💾 Sauvegarder
-                    </button>
-                    <button class="menu-btn" onclick="confirmReset()" style="background: linear-gradient(45deg, #f44336, #d32f2f); padding: 10px 20px; font-size: 0.9em;">
-                        🔄 Nouvelle Partie
-                    </button>
-                </div>
-                <p style="font-size: 0.8em; opacity: 0.7; margin-top: 10px;">
-                    Le jeu se sauvegarde automatiquement toutes les 30 secondes
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Écran gestion flotte -->
-    <div id="fleet-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('main')">← Retour</button>
-        <h2>🚢 Gestion de la Flotte</h2>
-        
-        <!-- Indicateur de renouvellement des missions -->
-        <div style="max-width: 600px; margin: 0 auto 20px;">
-            <div class="card" style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #FF9800; text-align: center; padding: 10px;">
-                <div id="mission-refresh-info" style="font-size: 0.9em;"></div>
-            </div>
-        </div>
-        
-        <div class="fleet-tabs">
-            <button class="fleet-tab active" onclick="switchFleetTab('cargo')">🚢 Cargo</button>
-            <button class="fleet-tab" onclick="switchFleetTab('passenger')">🛳️ Passagers</button>
-        </div>
-        
-        <div class="content-grid">
-            <div class="card">
-                <h3 id="fleet-ships-title">Vos Navires Cargo</h3>
-                <div id="ships-list"></div>
-            </div>
-            
-            <div class="card">
-                <h3 id="fleet-destinations-title">Destinations Cargo</h3>
-                <div id="destinations-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Écran boutique -->
-    <div id="shop-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('main')">← Retour</button>
-        <h2>🛒 Boutique d'Améliorations</h2>
-        
-        <div class="content-grid">
-            <div class="card">
-                <h3>Améliorations du Port</h3>
-                <div id="port-upgrades"></div>
-            </div>
-            
-            <div class="card">
-                <h3>Améliorations Navires Cargo</h3>
-                <div id="cargo-ship-upgrades"></div>
-            </div>
-            
-            <div class="card">
-                <h3>Améliorations Navires Passagers</h3>
-                <div id="passenger-ship-upgrades"></div>
-            </div>
-            
-            <div class="card">
-                <h3>Nouveaux Navires Cargo</h3>
-                <div id="new-cargo-ships"></div>
-            </div>
-            
-            <div class="card">
-                <h3>Nouveaux Navires Passagers</h3>
-                <div id="new-passenger-ships"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Écran banque -->
-    <div id="bank-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('main')">← Retour</button>
-        <h2>🏦 Services Bancaires</h2>
-        
-        <!-- Résumé financier -->
-        <div class="card" style="margin-bottom: 20px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50;">
-            <h3>💰 Votre Situation Financière</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
-                    <p style="opacity: 0.8; margin-bottom: 5px;">💵 Argent Liquide</p>
-                    <p style="font-size: 1.5em; font-weight: bold; color: #4CAF50;" id="bank-liquid-money">0€</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
-                    <p style="opacity: 0.8; margin-bottom: 5px;">🏦 Épargne</p>
-                    <p style="font-size: 1.5em; font-weight: bold; color: #2196F3;" id="bank-savings">0€</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
-                    <p style="opacity: 0.8; margin-bottom: 5px;">💸 Dettes</p>
-                    <p style="font-size: 1.5em; font-weight: bold; color: #ff6b6b;" id="bank-debt">0€</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center;">
-                    <p style="opacity: 0.8; margin-bottom: 5px;">📊 Patrimoine Net</p>
-                    <p style="font-size: 1.5em; font-weight: bold;" id="bank-net-worth">0€</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="content-grid">
-            <div class="card">
-                <h3>Compte Épargne</h3>
-                <p>Taux d'intérêt: 2% par heure</p>
-                <div class="input-group">
-                    <label>Montant à déposer:</label>
-                    <input type="number" id="deposit-amount" placeholder="Montant">
-                </div>
-                <button class="bank-btn" onclick="deposit()">Déposer</button>
-                <button class="bank-btn" onclick="withdraw()">Retirer</button>
-            </div>
-            
-            <div class="card">
-                <h3>Prêts Bancaires</h3>
-                <p>Taux d'intérêt: 5% par heure</p>
-                <div class="input-group">
-                    <label>Montant du prêt:</label>
-                    <input type="number" id="loan-amount" placeholder="Montant">
-                </div>
-                <button class="bank-btn" onclick="takeLoan()">Emprunter</button>
-                <div id="loan-info"></div>
-            </div>
+    <div id="travel-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>🚢 Envoyer en Mission</h2>
+            <div id="travel-details"></div>
+            <button class="btn" onclick="startTravel()">🚀 Commencer le Voyage</button>
         </div>
     </div>
 
     <div id="notification" class="notification"></div>
 
-    <!-- Chargement de Tone.js via CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-    
     <script>
-        // Gestionnaire audio
-        class AudioManager {
-            constructor() {
-                this.isEnabled = localStorage.getItem('maritimeTycoonSound') !== 'false';
-                this.isInitialized = false;
-                this.synths = {};
-                this.backgroundMusic = null;
-                this.updateSoundButton();
-            }
-
-            async initialize() {
-                if (this.isInitialized || typeof Tone === 'undefined') return;
-                
-                try {
-                    await Tone.start();
-                    
-                    // Créer les synthétiseurs pour différents sons
-                    this.synths = {
-                        coin: new Tone.Synth({
-                            oscillator: { type: "triangle" },
-                            envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.3 }
-                        }).toDestination(),
-                        
-                        ship: new Tone.Synth({
-                            oscillator: { type: "sine" },
-                            envelope: { attack: 0.5, decay: 0.3, sustain: 0.7, release: 1.5 }
-                        }).toDestination(),
-                        
-                        success: new Tone.PolySynth().toDestination(),
-                        
-                        error: new Tone.Synth({
-                            oscillator: { type: "sawtooth" },
-                            envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 }
-                        }).toDestination(),
-                        
-                        reward: new Tone.PolySynth().toDestination()
-                    };
-
-                    // Son d'ambiance océanique (optionnel)
-                    this.ambientNoise = new Tone.Noise("pink").toDestination();
-                    this.ambientNoise.volume.value = -30; // Très bas
-                    
-                    this.isInitialized = true;
-                    console.log("🎵 Système audio initialisé");
-                } catch (error) {
-                    console.log("❌ Erreur d'initialisation audio:", error);
-                }
-            }
-
-            updateSoundButton() {
-                const button = document.getElementById('sound-toggle');
-                if (button) {
-                    button.textContent = this.isEnabled ? '🔊' : '🔇';
-                    button.classList.toggle('muted', !this.isEnabled);
-                }
-            }
-
-            toggle() {
-                this.isEnabled = !this.isEnabled;
-                localStorage.setItem('maritimeTycoonSound', this.isEnabled.toString());
-                this.updateSoundButton();
-                
-                if (!this.isEnabled && this.backgroundMusic) {
-                    this.stopAmbient();
-                }
-            }
-
-            async playSound(type, options = {}) {
-                if (!this.isEnabled) return;
-                
-                await this.initialize();
-                if (!this.isInitialized) return;
-
-                try {
-                    switch (type) {
-                        case 'coin':
-                            // Son de pièces qui tombent
-                            this.synths.coin.triggerAttackRelease("C5", "8n");
-                            setTimeout(() => this.synths.coin.triggerAttackRelease("E5", "8n"), 50);
-                            setTimeout(() => this.synths.coin.triggerAttackRelease("G5", "8n"), 100);
-                            break;
-
-                        case 'ship_departure':
-                            // Corne de brume
-                            this.synths.ship.triggerAttackRelease("C3", "2n");
-                            break;
-
-                        case 'mission_success':
-                            // Mélodie de succès
-                            const successNotes = ["C4", "E4", "G4", "C5"];
-                            successNotes.forEach((note, i) => {
-                                setTimeout(() => this.synths.success.triggerAttackRelease(note, "8n"), i * 100);
-                            });
-                            break;
-
-                        case 'error':
-                            // Son d'erreur
-                            this.synths.error.triggerAttackRelease("C2", "4n");
-                            break;
-
-                        case 'daily_reward':
-                            // Fanfare de récompense
-                            const rewardNotes = ["C4", "G4", "C5", "E5", "G5"];
-                            rewardNotes.forEach((note, i) => {
-                                setTimeout(() => this.synths.reward.triggerAttackRelease(note, "8n"), i * 80);
-                            });
-                            break;
-
-                        case 'upgrade':
-                            // Son d'amélioration
-                            this.synths.success.triggerAttackRelease("F4", "8n");
-                            setTimeout(() => this.synths.success.triggerAttackRelease("A4", "8n"), 100);
-                            break;
-
-                        case 'purchase':
-                            // Son d'achat
-                            this.synths.coin.triggerAttackRelease("G4", "8n");
-                            setTimeout(() => this.synths.coin.triggerAttackRelease("C5", "8n"), 100);
-                            break;
-                    }
-                } catch (error) {
-                    console.log("Erreur lecture son:", error);
-                }
-            }
-
-            startAmbient() {
-                if (!this.isEnabled || !this.isInitialized) return;
-                
-                try {
-                    if (this.ambientNoise) {
-                        this.ambientNoise.start();
-                    }
-                } catch (error) {
-                    console.log("Erreur ambiance:", error);
-                }
-            }
-
-            stopAmbient() {
-                try {
-                    if (this.ambientNoise) {
-                        this.ambientNoise.stop();
-                    }
-                } catch (error) {
-                    console.log("Erreur arrêt ambiance:", error);
-                }
-            }
-        }
-
-        // Instance globale du gestionnaire audio
-        const audioManager = new AudioManager();
-
-        // Fonction pour basculer le son
-        function toggleSound() {
-            audioManager.toggle();
-        }
-
-        // Destinations cargo avec temps de navigation en millisecondes et XP requis pour débloquer
-        const cargoDestinations = [
-            { name: "🇫🇷 Le Havre", duration: 300000, baseReward: 200, baseXP: 10, requiredXP: 0, unlocked: true }, // 5 min
-            { name: "🇳🇱 Rotterdam", duration: 300000, baseReward: 250, baseXP: 12, requiredXP: 0, unlocked: true }, // 5 min
-            { name: "🇬🇧 Londres", duration: 300000, baseReward: 300, baseXP: 15, requiredXP: 0, unlocked: true }, // 5 min
-            { name: "🇪🇸 Barcelone", duration: 3600000, baseReward: 800, baseXP: 40, requiredXP: 50, unlocked: false }, // 1h
-            { name: "🇮🇹 Gênes", duration: 3600000, baseReward: 900, baseXP: 45, requiredXP: 75, unlocked: false }, // 1h
-            { name: "🇩🇪 Hambourg", duration: 3600000, baseReward: 850, baseXP: 42, requiredXP: 60, unlocked: false }, // 1h
-            { name: "🇺🇸 New York", duration: 10800000, baseReward: 2500, baseXP: 120, requiredXP: 200, unlocked: false }, // 3h
-            { name: "🇧🇷 Santos", duration: 18000000, baseReward: 4000, baseXP: 200, requiredXP: 400, unlocked: false }, // 5h
-            { name: "🇯🇵 Tokyo", duration: 36000000, baseReward: 8000, baseXP: 400, requiredXP: 800, unlocked: false }, // 10h
-            { name: "🇸🇬 Singapour", duration: 43200000, baseReward: 10000, baseXP: 500, requiredXP: 1200, unlocked: false }, // 12h
-            { name: "🇦🇺 Sydney", duration: 43200000, baseReward: 12000, baseXP: 600, requiredXP: 1500, unlocked: false } // 12h
-        ];
-
-        // Destinations passagers (croisières touristiques)
-        const passengerDestinations = [
-            { name: "🏖️ Côte d'Azur", duration: 300000, baseReward: 300, baseXP: 12, requiredXP: 0, unlocked: true }, // 5 min
-            { name: "🏝️ Îles Anglo-Normandes", duration: 300000, baseReward: 350, baseXP: 15, requiredXP: 0, unlocked: true }, // 5 min
-            { name: "🌅 Fjords Norvégiens", duration: 3600000, baseReward: 1200, baseXP: 50, requiredXP: 30, unlocked: false }, // 1h
-            { name: "🏛️ Îles Grecques", duration: 3600000, baseReward: 1300, baseXP: 55, requiredXP: 60, unlocked: false }, // 1h
-            { name: "🏝️ Baléares", duration: 3600000, baseReward: 1100, baseXP: 45, requiredXP: 40, unlocked: false }, // 1h
-            { name: "🗽 Croisière Transatlantique", duration: 10800000, baseReward: 4000, baseXP: 150, requiredXP: 150, unlocked: false }, // 3h
-            { name: "🏖️ Caraïbes", duration: 18000000, baseReward: 6500, baseXP: 250, requiredXP: 300, unlocked: false }, // 5h
-            { name: "🌸 Croisière Asie", duration: 36000000, baseReward: 12000, baseXP: 450, requiredXP: 600, unlocked: false }, // 10h
-            { name: "🐨 Tour du Pacifique", duration: 43200000, baseReward: 15000, baseXP: 550, requiredXP: 1000, unlocked: false }, // 12h
-            { name: "🌍 Tour du Monde", duration: 43200000, baseReward: 18000, baseXP: 700, requiredXP: 1800, unlocked: false } // 12h
-        ];
-
-        // Types de navires cargo à acheter
-        const cargoShipTypes = [
-            { name: "Petit Cargo", cost: 5000, capacity: 80, level: 1, type: "cargo" },
-            { name: "Cargo Moyen", cost: 15000, capacity: 150, level: 1, type: "cargo" },
-            { name: "Grand Cargo", cost: 40000, capacity: 300, level: 1, type: "cargo" },
-            { name: "Porte-conteneurs", cost: 100000, capacity: 500, level: 1, type: "cargo" }
-        ];
-
-        // Types de navires passagers à acheter
-        const passengerShipTypes = [
-            { name: "Ferry Côtier", cost: 8000, capacity: 200, level: 1, type: "passenger" },
-            { name: "Bateau de Croisière", cost: 25000, capacity: 400, level: 1, type: "passenger" },
-            { name: "Paquebot Moderne", cost: 60000, capacity: 800, level: 1, type: "passenger" },
-            { name: "Méga Croisière", cost: 150000, capacity: 1500, level: 1, type: "passenger" }
-        ];
-
-        // Missions spécifiques par destination
-        const specificMissions = {
-            cargo: {
-                "🇫🇷 Le Havre": [
-                    { cargo: "Charbon", quantity: 20, unit: "tonnes", reward: 300, description: "Livrer du charbon pour la centrale électrique" },
-                    { cargo: "Conteneurs", quantity: 15, unit: "conteneurs", reward: 250, description: "Transport de conteneurs manufacturés" },
-                    { cargo: "Céréales", quantity: 35, unit: "tonnes", reward: 400, description: "Blé canadien pour les boulangeries françaises" }
-                ],
-                "🇳🇱 Rotterdam": [
-                    { cargo: "Pétrole brut", quantity: 50, unit: "tonnes", reward: 500, description: "Approvisionnement de la raffinerie Shell" },
-                    { cargo: "Produits chimiques", quantity: 12, unit: "tonnes", reward: 450, description: "Transport de produits industriels" },
-                    { cargo: "Machines", quantity: 8, unit: "machines", reward: 600, description: "Équipement lourd pour l'industrie" }
-                ],
-                "🇬🇧 Londres": [
-                    { cargo: "Thé", quantity: 5, unit: "tonnes", reward: 350, description: "Thé de Ceylan pour les salons londoniens" },
-                    { cargo: "Voitures", quantity: 25, unit: "véhicules", reward: 800, description: "Véhicules allemands pour le marché britannique" },
-                    { cargo: "Textile", quantity: 18, unit: "tonnes", reward: 420, description: "Tissus pour l'industrie de la mode" }
-                ],
-                "🇪🇸 Barcelone": [
-                    { cargo: "Vin", quantity: 30, unit: "tonnes", reward: 1200, description: "Vin français premium pour les restaurants" },
-                    { cargo: "Marbre", quantity: 45, unit: "tonnes", reward: 1500, description: "Marbre italien pour la construction" },
-                    { cargo: "Électronique", quantity: 12, unit: "palettes", reward: 1000, description: "Composants high-tech asiatiques" }
-                ],
-                "🇮🇹 Gênes": [
-                    { cargo: "Pâtes", quantity: 25, unit: "tonnes", reward: 1100, description: "Pâtes artisanales pour l'export" },
-                    { cargo: "Ferraille", quantity: 60, unit: "tonnes", reward: 1400, description: "Recyclage métallique pour les aciéries" },
-                    { cargo: "Huile d'olive", quantity: 15, unit: "tonnes", reward: 1300, description: "Huile d'olive extra vierge toscane" }
-                ],
-                "🇩🇪 Hambourg": [
-                    { cargo: "Automobiles", quantity: 40, unit: "véhicules", reward: 1600, description: "Export d'automobiles allemandes" },
-                    { cargo: "Bière", quantity: 50, unit: "tonnes", reward: 1200, description: "Bière allemande artisanale" },
-                    { cargo: "Équipements industriels", quantity: 15, unit: "machines", reward: 1800, description: "Machines-outils de précision" }
-                ],
-                "🇺🇸 New York": [
-                    { cargo: "Conteneurs de luxe", quantity: 80, unit: "conteneurs", reward: 4000, description: "Produits de luxe européens pour Manhattan" },
-                    { cargo: "Matières premières", quantity: 120, unit: "tonnes", reward: 3500, description: "Acier et aluminium pour la construction" },
-                    { cargo: "Technologie", quantity: 25, unit: "palettes", reward: 5000, description: "Composants électroniques avancés" }
-                ],
-                "🇧🇷 Santos": [
-                    { cargo: "Café", quantity: 100, unit: "tonnes", reward: 6000, description: "Café brésilien premium pour l'Europe" },
-                    { cargo: "Minerai de fer", quantity: 200, unit: "tonnes", reward: 5500, description: "Minerai pour les aciéries européennes" },
-                    { cargo: "Produits agricoles", quantity: 150, unit: "tonnes", reward: 4800, description: "Soja et céréales pour l'export" }
-                ],
-                "🇯🇵 Tokyo": [
-                    { cargo: "Électronique japonaise", quantity: 60, unit: "conteneurs", reward: 12000, description: "Technologies de pointe made in Japan" },
-                    { cargo: "Automobiles", quantity: 100, unit: "véhicules", reward: 15000, description: "Voitures japonaises pour l'Europe" },
-                    { cargo: "Composants industriels", quantity: 40, unit: "palettes", reward: 10000, description: "Pièces de haute précision" }
-                ],
-                "🇸🇬 Singapour": [
-                    { cargo: "Épices et aromates", quantity: 80, unit: "tonnes", reward: 14000, description: "Épices exotiques d'Asie du Sud-Est" },
-                    { cargo: "Produits technologiques", quantity: 50, unit: "conteneurs", reward: 16000, description: "Hub technologique asiatique" },
-                    { cargo: "Pétrole raffiné", quantity: 120, unit: "tonnes", reward: 13000, description: "Carburants raffinés de Singapour" }
-                ],
-                "🇦🇺 Sydney": [
-                    { cargo: "Minerais précieux", quantity: 150, unit: "tonnes", reward: 18000, description: "Or et métaux rares australiens" },
-                    { cargo: "Produits agricoles", quantity: 200, unit: "tonnes", reward: 15000, description: "Blé et bœuf australiens" },
-                    { cargo: "Laine premium", quantity: 100, unit: "tonnes", reward: 16000, description: "Laine merinos de qualité supérieure" }
-                ]
-            },
-            passenger: {
-                "🏖️ Côte d'Azur": [
-                    { passengers: 120, type: "Familles", reward: 450, description: "Familles en vacances d'été à Nice et Cannes" },
-                    { passengers: 80, type: "Couples", reward: 500, description: "Escapade romantique sur la Riviera française" },
-                    { passengers: 200, type: "Touristes", reward: 600, description: "Circuit touristique de la Méditerranée" }
-                ],
-                "🏝️ Îles Anglo-Normandes": [
-                    { passengers: 150, type: "Randonneurs", reward: 400, description: "Groupe de randonneurs pour Jersey et Guernesey" },
-                    { passengers: 90, type: "Photographes", reward: 520, description: "Expédition photo nature des îles britanniques" },
-                    { passengers: 110, type: "Familles", reward: 380, description: "Découverte des traditions anglo-normandes" }
-                ],
-                "🌅 Fjords Norvégiens": [
-                    { passengers: 300, type: "Croisiéristes", reward: 1800, description: "Croisière panoramique des fjords spectaculaires" },
-                    { passengers: 180, type: "Aventuriers", reward: 1600, description: "Expédition kayak et randonnée en Norvège" },
-                    { passengers: 250, type: "Seniors", reward: 1900, description: "Voyage culturel pour seniors actifs" }
-                ],
-                "🏛️ Îles Grecques": [
-                    { passengers: 220, type: "Jeunes", reward: 1500, description: "Voyage étudiant découverte de la Grèce antique" },
-                    { passengers: 160, type: "Couples", reward: 1700, description: "Lune de miel dans les Cyclades" },
-                    { passengers: 350, type: "Croisiéristes", reward: 2000, description: "Circuit complet Santorin-Mykonos-Rhodes" }
-                ],
-                "🏝️ Baléares": [
-                    { passengers: 280, type: "Fêtards", reward: 1400, description: "Soirées à Ibiza et Majorque" },
-                    { passengers: 200, type: "Familles", reward: 1600, description: "Vacances familiales aux Baléares" },
-                    { passengers: 150, type: "Couples", reward: 1800, description: "Escapade romantique méditerranéenne" }
-                ],
-                "🗽 Croisière Transatlantique": [
-                    { passengers: 500, type: "Croisiéristes de luxe", reward: 6000, description: "Traversée transatlantique de prestige" },
-                    { passengers: 300, type: "Businessmen", reward: 5500, description: "Hommes d'affaires en voyage d'affaires" },
-                    { passengers: 400, type: "Retraités", reward: 6500, description: "Croisière tranquille pour seniors fortunés" }
-                ],
-                "🏖️ Caraïbes": [
-                    { passengers: 600, type: "Vacanciers", reward: 8500, description: "Vacances tropicales aux Caraïbes" },
-                    { passengers: 400, type: "Plongeurs", reward: 9000, description: "Expédition plongée dans les récifs coralliens" },
-                    { passengers: 350, type: "Lunes de miel", reward: 10000, description: "Voyages de noces dans les îles paradisiaques" }
-                ],
-                "🌸 Croisière Asie": [
-                    { passengers: 700, type: "Explorateurs", reward: 15000, description: "Découverte culturelle de l'Asie" },
-                    { passengers: 500, type: "Photographes", reward: 16000, description: "Safari photo en Asie du Sud-Est" },
-                    { passengers: 600, type: "Gastronomes", reward: 14000, description: "Tour culinaire des capitales asiatiques" }
-                ],
-                "🐨 Tour du Pacifique": [
-                    { passengers: 800, type: "Aventuriers", reward: 20000, description: "Expédition dans les îles du Pacifique" },
-                    { passengers: 600, type: "Naturalistes", reward: 22000, description: "Observation de la faune du Pacifique" },
-                    { passengers: 700, type: "Retraités fortunés", reward: 25000, description: "Croisière de luxe dans le Pacifique" }
-                ],
-                "🌍 Tour du Monde": [
-                    { passengers: 1000, type: "Milliardaires", reward: 35000, description: "Tour du monde en navire de luxe" },
-                    { passengers: 800, type: "Célébrités", reward: 40000, description: "Croisière VIP tour du monde" },
-                    { passengers: 900, type: "Explorateurs", reward: 30000, description: "Expédition scientifique mondiale" }
-                ]
-            }
-        };
-
         // État du jeu
         let gameState = {
-            money: 10000,
-            xp: 0,
-            savings: 0,
-            debt: 0,
-            passiveIncome: 0,
-            portLevel: 1,
-            cargoShips: [
-                { id: 1, name: "Cargo Express", level: 1, capacity: 100, onMission: false, missionEnd: 0, destination: null, type: "cargo" }
+            money: 1000,
+            fuel: 100,
+            reputation: 0,
+            level: 1,
+            ships: [
+                {
+                    id: 1,
+                    name: "Petit Cargo",
+                    type: "cargo",
+                    capacity: 50,
+                    speed: 1,
+                    fuelConsumption: 1,
+                    status: "available",
+                    destination: null,
+                    arrivalTime: null,
+                    earnings: 0
+                }
             ],
-            passengerShips: [
-                { id: 2, name: "Ferry Starter", level: 1, capacity: 150, onMission: false, missionEnd: 0, destination: null, type: "passenger" }
+            destinations: [
+                {
+                    id: 1,
+                    name: "Port Local",
+                    distance: 0.0833,
+                    reward: 50,
+                    reputation: 2,
+                    fuelCost: 5,
+                    description: "Livraison express locale"
+                },
+                {
+                    id: 2,
+                    name: "Marseille",
+                    distance: 2,
+                    reward: 150,
+                    reputation: 5,
+                    fuelCost: 15,
+                    description: "Port méditerranéen animé"
+                },
+                {
+                    id: 3,
+                    name: "Londres",
+                    distance: 6,
+                    reward: 400,
+                    reputation: 15,
+                    fuelCost: 40,
+                    description: "Grand port commercial"
+                },
+                {
+                    id: 4,
+                    name: "New York",
+                    distance: 24,
+                    reward: 1200,
+                    reputation: 40,
+                    fuelCost: 120,
+                    description: "Métropole américaine"
+                },
+                {
+                    id: 5,
+                    name: "Tokyo",
+                    distance: 48,
+                    reward: 2500,
+                    reputation: 80,
+                    fuelCost: 200,
+                    description: "Capital du Pacifique"
+                },
+                {
+                    id: 6,
+                    name: "Singapour",
+                    distance: 36,
+                    reward: 1800,
+                    reputation: 60,
+                    fuelCost: 150,
+                    description: "Hub asiatique"
+                }
             ],
-            missions: [],
-            loanInterestRate: 0.05, // 5% par heure (au lieu de 1% par minute)
-            savingsInterestRate: 0.02, // 2% par heure (au lieu de 0.5% par minute)
-            lastSave: Date.now(),
-            currentFleetTab: "cargo",
-            lastDailyReward: 0, // Timestamp de la dernière récompense quotidienne
-            dailyRewardStreak: 0, // Série de jours consécutifs
-            lastMissionRefresh: 0 // Timestamp du dernier renouvellement automatique des missions
+            shopItems: [
+                {
+                    id: 1,
+                    name: "Cargo Standard",
+                    price: 2500,
+                    type: "ship",
+                    specs: { capacity: 100, speed: 1.2, fuelConsumption: 0.8 }
+                },
+                {
+                    id: 2,
+                    name: "Cargo Rapide",
+                    price: 5000,
+                    type: "ship",
+                    specs: { capacity: 80, speed: 2, fuelConsumption: 1.5 }
+                },
+                {
+                    id: 3,
+                    name: "Porte-conteneurs",
+                    price: 15000,
+                    type: "ship",
+                    specs: { capacity: 300, speed: 0.8, fuelConsumption: 2.5 }
+                },
+                {
+                    id: 4,
+                    name: "Yacht de Luxe",
+                    price: 25000,
+                    type: "ship",
+                    specs: { capacity: 20, speed: 3, fuelConsumption: 3 }
+                }
+            ],
+            statistics: {
+                totalEarnings: 0,
+                totalTrips: 0,
+                totalDistance: 0,
+                totalFuelConsumed: 0
+            },
+            adminSettings: {
+                rewardMultiplier: 1.0,
+                startMoney: 1000,
+                startFuel: 100,
+                fuelPricePerLiter: 2
+            }
         };
 
+        let selectedShip = null;
+        let currentScreen = 'fleet';
+
+        // Fonctions d'affichage
         function updateDisplay() {
-            document.getElementById('money').textContent = Math.floor(gameState.money).toLocaleString();
-            document.getElementById('xp').textContent = gameState.xp.toLocaleString();
-            document.getElementById('savings').textContent = Math.floor(gameState.savings).toLocaleString();
-            document.getElementById('debt').textContent = Math.floor(gameState.debt).toLocaleString();
-            document.getElementById('passive-income').textContent = Math.floor(gameState.passiveIncome).toLocaleString();
+            document.getElementById('money').textContent = gameState.money;
+            document.getElementById('fuel').textContent = gameState.fuel;
+            document.getElementById('reputation').textContent = gameState.reputation;
+            document.getElementById('level').textContent = gameState.level;
             
-            // Mettre à jour la récompense quotidienne sur la page principale
-            updateMainDailyRewardDisplay();
+            updateShipsDisplay();
+            updateDestinationsDisplay();
+            updateShopDisplay();
+            updateStatsDisplay();
         }
 
-        function updateMainDailyRewardDisplay() {
-            const dailyRewardInfo = document.getElementById('main-daily-reward-info');
-            if (!dailyRewardInfo) return;
-            
-            const now = Date.now();
-            const rewardCooldown = 24 * 60 * 60 * 1000; // 24 heures réelles
-            
-            const timeSinceLastReward = now - gameState.lastDailyReward;
-            const canClaim = timeSinceLastReward >= rewardCooldown;
-            
-            if (canClaim) {
-                const baseReward = 1000;
-                const streakBonus = gameState.dailyRewardStreak * 500;
-                const totalReward = baseReward + streakBonus;
+        function updateShipsDisplay() {
+            const container = document.getElementById('ships-container');
+            container.innerHTML = '';
+
+            gameState.ships.forEach(ship => {
+                const shipCard = document.createElement('div');
+                shipCard.className = `ship-card ${ship.status === 'traveling' ? 'traveling' : ''}`;
                 
-                dailyRewardInfo.innerHTML = `
-                    <div>
-                        <p>🎁 <strong>Récompense disponible !</strong></p>
-                        <p>Récompense de base: ${baseReward.toLocaleString()}€</p>
-                        <p>Bonus série (${gameState.dailyRewardStreak} jours): ${streakBonus.toLocaleString()}€</p>
-                        <p style="font-size: 1.2em; font-weight: bold; color: #FFC107; margin: 10px 0;">
-                            Total: ${totalReward.toLocaleString()}€
-                        </p>
-                        <button class="bank-btn" onclick="claimDailyReward()" style="background: #FFC107; color: #000; font-weight: bold;">
-                            🎁 Récupérer la récompense !
-                        </button>
-                    </div>
-                `;
-            } else {
-                const timeLeft = rewardCooldown - timeSinceLastReward;
-                const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
-                const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-                const secondsLeft = Math.floor((timeLeft % (60 * 1000)) / 1000);
-                
-                dailyRewardInfo.innerHTML = `
-                    <div>
-                        <p>⏰ Prochaine récompense dans:</p>
-                        <p style="font-size: 1.5em; font-weight: bold; color: #FFC107; margin: 10px 0;">
-                            ${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}
-                        </p>
-                        <p>Série actuelle: ${gameState.dailyRewardStreak} jours</p>
-                        <p>Prochaine récompense: ${(1000 + (gameState.dailyRewardStreak + 1) * 500).toLocaleString()}€</p>
-                    </div>
-                `;
-            }
-        }
+                let statusBadge = ship.status === 'available' ? 
+                    '<span class="status-badge status-available">Disponible</span>' :
+                    '<span class="status-badge status-traveling">En voyage</span>';
 
-        function claimDailyReward() {
-            const baseReward = 1000;
-            const streakBonus = gameState.dailyRewardStreak * 500;
-            const totalReward = baseReward + streakBonus;
-            
-            gameState.money += totalReward;
-            gameState.lastDailyReward = Date.now();
-            gameState.dailyRewardStreak += 1;
-            
-            // Son de récompense quotidienne
-            audioManager.playSound('daily_reward');
-            
-            showNotification(`🎁 Récompense quotidienne récupérée ! +${totalReward.toLocaleString()}€ (Série: ${gameState.dailyRewardStreak} jours)`, '#FFC107');
-            
-            updateDisplay();
-            updateBankDisplay();
-            saveGame();
-        }
+                let progressBar = '';
+                let actionButton = '';
 
-        function showScreen(screenName) {
-            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-            document.getElementById(screenName + '-screen').classList.add('active');
-            
-            if (screenName === 'fleet') {
-                updateFleetDisplay();
-            }
-            if (screenName === 'shop') {
-                updateShopDisplay();
-            }
-            if (screenName === 'bank') {
-                updateBankDisplay();
-            }
-        }
-
-        function switchFleetTab(tabType) {
-            gameState.currentFleetTab = tabType;
-            
-            // Mettre à jour les onglets visuellement
-            document.querySelectorAll('.fleet-tab').forEach(tab => tab.classList.remove('active'));
-            
-            // Trouver l'onglet correspondant et l'activer
-            const tabs = document.querySelectorAll('.fleet-tab');
-            tabs.forEach(tab => {
-                if ((tabType === 'cargo' && tab.textContent.includes('Cargo')) || 
-                    (tabType === 'passenger' && tab.textContent.includes('Passagers'))) {
-                    tab.classList.add('active');
-                }
-            });
-            
-            // Mettre à jour les titres
-            const isCargoTab = tabType === 'cargo';
-            document.getElementById('fleet-ships-title').textContent = isCargoTab ? 'Vos Navires Cargo' : 'Vos Navires Passagers';
-            document.getElementById('fleet-destinations-title').textContent = isCargoTab ? 'Destinations Cargo' : 'Destinations Touristiques';
-            
-            // Rafraîchir l'affichage
-            updateFleetDisplay();
-        }
-
-        function updateFleetDisplay() {
-            const shipsList = document.getElementById('ships-list');
-            const destinationsList = document.getElementById('destinations-list');
-            
-            // Mettre à jour l'indicateur de renouvellement des missions
-            updateMissionRefreshInfo();
-            
-            const isCargoTab = gameState.currentFleetTab === 'cargo';
-            const ships = isCargoTab ? gameState.cargoShips : gameState.passengerShips;
-            const destinations = isCargoTab ? cargoDestinations : passengerDestinations;
-            const shipIcon = isCargoTab ? '🚢' : '🛳️';
-            const capacityUnit = isCargoTab ? 'tonnes' : 'passagers';
-            
-            // Afficher les navires
-            shipsList.innerHTML = ships.map(ship => {
-                const isOnMission = ship.onMission && Date.now() < ship.missionEnd;
-                const timeLeft = isOnMission ? Math.ceil((ship.missionEnd - Date.now()) / 1000) : 0;
-                const destinationForShip = destinations.find(d => d.name === ship.destination);
-                const totalDuration = destinationForShip ? destinationForShip.duration : 0;
-                const progress = isOnMission && totalDuration > 0 ? 100 - ((timeLeft * 1000) / totalDuration) * 100 : 0;
-                
-                let missionDetails = '';
-                if (isOnMission && ship.currentMission) {
-                    const mission = ship.currentMission;
-                    if (gameState.currentFleetTab === 'cargo') {
-                        missionDetails = `Transport: ${mission.cargo} (${mission.quantity} ${mission.unit})`;
+                if (ship.status === 'traveling') {
+                    const totalTime = ship.travelTime * 60 * 60 * 1000;
+                    const elapsed = Date.now() - ship.departureTime;
+                    const progress = Math.min(100, (elapsed / totalTime) * 100);
+                    const remainingMs = Math.max(0, totalTime - elapsed);
+                    const remainingHours = Math.floor(remainingMs / (60 * 60 * 1000));
+                    const remainingMinutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+                    
+                    let timeDisplay = '';
+                    if (remainingHours > 0) {
+                        timeDisplay = `${remainingHours}h ${remainingMinutes}min`;
                     } else {
-                        missionDetails = `Transport: ${mission.passengers} ${mission.type}`;
+                        timeDisplay = `${remainingMinutes}min`;
                     }
-                }
-                
-                return `
-                    <div class="ship-card">
-                        <h4>${shipIcon} ${ship.name} (Niveau ${ship.level})</h4>
-                        <p>Capacité: ${ship.capacity * ship.level} ${capacityUnit}</p>
-                        ${isOnMission ? 
-                            `<p>🚢 ${missionDetails || 'En mission'} → ${ship.destination}</p>
-                             <p>⏱️ ${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2, '0')} restantes</p>
-                             <div class="progress-bar">
-                                <div class="progress-waves"></div>
-                                <div class="progress-ship" style="left: ${Math.max(0, Math.min(95, progress))}%">${shipIcon}</div>
-                             </div>` : 
-                            '<p>✅ Disponible</p>'}
-                    </div>
-                `;
-            }).join('');
-            
-            // Afficher les destinations avec missions proposées
-            destinationsList.innerHTML = destinations.map((dest, index) => {
-                const isUnlocked = dest.unlocked;
-                const availableShip = ships.find(ship => !ship.onMission || Date.now() >= ship.missionEnd);
-                const hasAvailableShip = !!availableShip;
-                
-                if (!isUnlocked) {
-                    return `
-                        <div class="destination-card locked">
-                            <h4>${dest.name} 🔒</h4>
-                            <p>⏱️ Durée: ${formatDuration(dest.duration)}</p>
-                            <p>💰 Récompense: ${Math.floor(dest.baseReward * gameState.portLevel)}€</p>
-                            <p>⭐ XP: ${dest.baseXP}</p>
-                            <p class="xp-requirement">🔒 Requis: ${dest.requiredXP} XP</p>
+                    
+                    progressBar = `
+                        <div class="ship-animation">
+                            <div class="wave"></div>
+                            <div class="ship-trail"></div>
+                            <div class="sailing-ship" style="left: ${progress}%">🚢</div>
                         </div>
-                    `;
-                }
-                
-                // Générer une mission aléatoire pour cette destination
-                const missions = specificMissions[gameState.currentFleetTab][dest.name] || [];
-                let missionHtml = '';
-                
-                if (hasAvailableShip && missions.length > 0) {
-                    // Choisir une mission aléatoire (mais stable pour cette destination)
-                    const seed = dest.lastRefresh || dest.name.length;
-                    const missionIndex = Math.abs(seed + Math.floor(Date.now() / 600000)) % missions.length;
-                    const mission = missions[Math.floor(missionIndex)];
-                    
-                    const costs = calculateMissionCosts(availableShip, dest, gameState.currentFleetTab);
-                    const canAfford = gameState.money >= costs.total;
-                    
-                    // Vérifier si le navire a assez de capacité
-                    const requiredCapacity = gameState.currentFleetTab === 'cargo' ? mission.quantity : mission.passengers;
-                    const shipCapacity = availableShip.capacity * availableShip.level;
-                    const hasCapacity = shipCapacity >= requiredCapacity;
-                    
-                    const finalReward = mission.reward * gameState.portLevel;
-                    
-                    missionHtml = `
-                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 4px solid ${hasCapacity && canAfford ? '#4CAF50' : '#ff6b6b'};">
-                            <div style="background: rgba(33, 150, 243, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-                                <p style="font-weight: bold; color: #2196F3; margin-bottom: 5px;">📢 Mission Proposée</p>
-                                <p style="font-size: 0.95em;">
-                                    <strong>${dest.name}</strong> vous propose de ${gameState.currentFleetTab === 'cargo' ? 
-                                        `livrer <strong>${mission.quantity} ${mission.unit} de ${mission.cargo}</strong>` : 
-                                        `transporter <strong>${mission.passengers} ${mission.type}</strong>`}
-                                </p>
-                                <p style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">${mission.description}</p>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; font-size: 0.9em;">
-                                <div>💰 Gain: <strong>${finalReward}€</strong></div>
-                                <div>⭐ XP: <strong>${dest.baseXP}</strong></div>
-                                <div>💸 Coût: <strong>${costs.total}€</strong></div>
-                                <div>⏱️ Durée: <strong>${formatDuration(dest.duration)}</strong></div>
-                            </div>
-                            
-                            ${!hasCapacity ? 
-                                `<p style="font-size: 0.85em; color: #ff6b6b; margin: 5px 0;">❌ Capacité insuffisante ! Navire: ${shipCapacity}, Requis: ${requiredCapacity}</p>` : ''}
-                            ${!canAfford ? 
-                                `<p style="font-size: 0.85em; color: #ff9800; margin: 5px 0;">💸 Fonds insuffisants !</p>` : ''}
-                            
-                            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button class="mission-btn" onclick="startSpecificMission(${index}, ${Math.floor(missionIndex)}, '${gameState.currentFleetTab}')" 
-                                    style="flex: 1;" ${!canAfford || !hasCapacity ? 'disabled' : ''}>
-                                    ${!hasCapacity ? '❌ Navire trop petit' : !canAfford ? '❌ Pas assez d\'argent' : '✅ Accepter la mission'}
-                                </button>
-                                <button class="mission-btn" onclick="refreshMission(${index})" 
-                                    style="background: #FF9800; flex: 0 0 auto; padding: 8px 12px;">
-                                    🔄
-                                </button>
-                            </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
                         </div>
-                    `;
-                } else if (hasAvailableShip) {
-                    missionHtml = `
-                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; opacity: 0.7;">
-                            <p>😔 Aucune mission disponible actuellement</p>
-                            <p style="font-size: 0.9em; margin-top: 5px;">Revenez plus tard !</p>
-                        </div>
+                        <div>Arrivée dans: ${timeDisplay} vers ${ship.destination.name}</div>
                     `;
                 } else {
-                    missionHtml = `
-                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; opacity: 0.7;">
-                            <p>🚢 Aucun navire disponible</p>
-                            <p style="font-size: 0.9em; margin-top: 5px;">Attendez qu'un navire revienne de mission</p>
+                    actionButton = `<button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Envoyer en Mission</button>`;
+                }
+
+                shipCard.innerHTML = `
+                    <div class="ship-status">
+                        <div class="ship-name">${ship.name}</div>
+                        ${statusBadge}
+                    </div>
+                    <div class="ship-stats">
+                        <div class="stat">
+                            <div class="stat-value">${ship.capacity}</div>
+                            <div class="stat-label">Capacité</div>
                         </div>
-                    `;
+                        <div class="stat">
+                            <div class="stat-value">${ship.speed}x</div>
+                            <div class="stat-label">Vitesse</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${ship.fuelConsumption}x</div>
+                            <div class="stat-label">Consommation</div>
+                        </div>
+                    </div>
+                    ${progressBar}
+                    ${actionButton}
+                `;
+
+                container.appendChild(shipCard);
+            });
+        }
+
+        function updateDestinationsDisplay() {
+            const container = document.getElementById('destinations-container');
+            container.innerHTML = '';
+
+            gameState.destinations.forEach(destination => {
+                const destCard = document.createElement('div');
+                let fuelCost = destination.fuelCost;
+                
+                if (selectedShip) {
+                    fuelCost = Math.ceil(destination.fuelCost * selectedShip.fuelConsumption);
                 }
                 
-                return `
-                    <div class="destination-card">
-                        <h4>${dest.name}</h4>
-                        ${missionHtml}
+                const hasEnoughFuel = gameState.fuel >= fuelCost;
+                destCard.className = `destination-card ${!hasEnoughFuel ? 'insufficient-fuel' : ''}`;
+                destCard.onclick = () => selectDestination(destination);
+
+                destCard.innerHTML = `
+                    <div class="destination-name">${destination.name}</div>
+                    <div class="destination-info">
+                        <div>🕒 ${destination.name === "Port Local" ? "5 min" : (destination.distance < 1 ? Math.round(destination.distance * 60) + 'min' : destination.distance + 'h')} de voyage</div>
+                        <div>💰 ${destination.reward}€ de récompense</div>
+                        <div>⚓ +${destination.reputation} réputation</div>
+                        <div class="fuel-cost">⛽ ${fuelCost}L de carburant</div>
+                        ${!hasEnoughFuel ? '<div style="color: #d63031; font-weight: bold;">❌ Carburant insuffisant</div>' : ''}
+                        <div style="margin-top: 8px; opacity: 0.8;">${destination.description}</div>
                     </div>
                 `;
-            }).join('');
-        }
 
-        function calculateMissionCosts(ship, destination, shipType) {
-            // Coût de carburant (dépend de la durée et du type)
-            const fuelCost = Math.floor(destination.duration / 60000) * (shipType === 'cargo' ? 10 : 15);
-            
-            // Frais d'entretien (dépend du niveau et de la capacité du navire)
-            const maintenanceCost = Math.floor((ship.level * ship.capacity) / 10) * (shipType === 'cargo' ? 2 : 3);
-            
-            // Frais d'assurance (dépend de la distance/durée et du type de navire)
-            const insuranceBaseCost = shipType === 'cargo' ? 50 : 80;
-            const insuranceCost = Math.floor(insuranceBaseCost + (destination.duration / 3600000) * 25); // +25€ par heure
-            
-            return {
-                fuel: fuelCost,
-                maintenance: maintenanceCost,
-                insurance: insuranceCost,
-                total: fuelCost + maintenanceCost + insuranceCost
-            };
-        }
-
-        function calculateMissionRisk(ship, mission, portLevel) {
-            let baseRisk = mission.risk;
-            
-            // Réduction de risque par niveau du navire (2% par niveau)
-            const shipLevelReduction = (ship.level - 1) * 2;
-            
-            // Réduction de risque par niveau du port (1% par niveau après le niveau 1)
-            const portLevelReduction = Math.max(0, portLevel - 1) * 1;
-            
-            // Calcul du risque final
-            const finalRisk = Math.max(0, baseRisk - shipLevelReduction - portLevelReduction);
-            
-            return {
-                baseRisk: baseRisk,
-                shipReduction: shipLevelReduction,
-                portReduction: portLevelReduction,
-                finalRisk: finalRisk
-            };
-        }
-
-        function calculateMissionReward(ship, destination, mission, portLevel) {
-            const baseReward = Math.floor(destination.baseReward * portLevel * (ship.capacity * ship.level / 100));
-            return Math.floor(baseReward * mission.rewardMultiplier);
-        }
-
-        function startSpecificMission(destinationIndex, missionIndex, shipType) {
-            const destinations = shipType === 'cargo' ? cargoDestinations : passengerDestinations;
-            const ships = shipType === 'cargo' ? gameState.cargoShips : gameState.passengerShips;
-            
-            const destination = destinations[destinationIndex];
-            const missions = specificMissions[shipType][destination.name] || [];
-            const mission = missions[missionIndex];
-            
-            if (!destination || !destination.unlocked || !mission) {
-                audioManager.playSound('error');
-                showNotification('Mission non disponible !', '#ff6b6b');
-                return;
-            }
-            
-            const availableShip = ships.find(ship => !ship.onMission || Date.now() >= ship.missionEnd);
-            
-            if (!availableShip) {
-                audioManager.playSound('error');
-                showNotification('Aucun navire disponible !', '#ff6b6b');
-                return;
-            }
-            
-            // Vérifier la capacité
-            const requiredCapacity = shipType === 'cargo' ? mission.quantity : mission.passengers;
-            const shipCapacity = availableShip.capacity * availableShip.level;
-            
-            if (shipCapacity < requiredCapacity) {
-                audioManager.playSound('error');
-                showNotification(`Capacité insuffisante ! Navire: ${shipCapacity}, Requis: ${requiredCapacity}`, '#ff6b6b');
-                return;
-            }
-            
-            // Calculer tous les coûts
-            const costs = calculateMissionCosts(availableShip, destination, shipType);
-            
-            if (gameState.money < costs.total) {
-                audioManager.playSound('error');
-                showNotification(`Fonds insuffisants ! Coût total: ${costs.total}€`, '#ff6b6b');
-                return;
-            }
-            
-            // Déduire tous les coûts
-            gameState.money -= costs.total;
-            availableShip.onMission = true;
-            availableShip.missionEnd = Date.now() + destination.duration;
-            availableShip.destination = destination.name;
-            availableShip.currentMission = mission;
-            availableShip.missionDestinationIndex = destinationIndex;
-            
-            // Programmer la fin de mission
-            setTimeout(() => {
-                if (availableShip.onMission && availableShip.destination === destination.name) {
-                    completeMissionWithResults(availableShip);
-                }
-            }, destination.duration);
-            
-            const shipIcon = shipType === 'cargo' ? '🚢' : '🛳️';
-            const cargoInfo = shipType === 'cargo' ? 
-                `${mission.cargo} (${mission.quantity} ${mission.unit})` : 
-                `${mission.passengers} ${mission.type}`;
-            
-            // Son de départ de navire
-            audioManager.playSound('ship_departure');
-            
-            showNotification(`${shipIcon} ${availableShip.name} parti avec ${cargoInfo} vers ${destination.name} !`, '#2196F3');
-            updateDisplay();
-            updateFleetDisplay();
-            saveGame();
-        }
-
-        function completeMissionWithResults(ship) {
-            const destinations = ship.type === "cargo" ? cargoDestinations : passengerDestinations;
-            const destination = destinations.find(d => d.name === ship.destination);
-            const mission = ship.currentMission;
-            
-            if (destination && mission) {
-                // Missions spécifiques - pas de risque, récompense directe
-                const finalReward = mission.reward * gameState.portLevel;
-                const xpReward = destination.baseXP;
-                
-                gameState.money += finalReward;
-                gameState.xp += xpReward;
-                
-                const shipType = ship.type === "cargo" ? "🚢" : "🛳️";
-                const cargoInfo = ship.type === "cargo" ? 
-                    `${mission.cargo} (${mission.quantity} ${mission.unit})` : 
-                    `${mission.passengers} ${mission.type}`;
-                
-                // Son de mission réussie
-                audioManager.playSound('mission_success');
-                
-                showNotification(`${shipType} ${ship.name} : Livraison réussie ! ${cargoInfo} - +${finalReward}€ +${xpReward}XP`, '#4CAF50');
-                
-                ship.onMission = false;
-                ship.destination = null;
-                ship.missionEnd = 0;
-                ship.currentMission = null;
-                ship.missionDestinationIndex = null;
-                
-                updateUnlockedDestinations();
-                updateDisplay();
-                
-                // Sauvegarder automatiquement
-                saveGame();
-            }
-        }
-
-        function startMission(destinationName, shipType) {
-            // Fonction de compatibilité - utilise la première mission disponible
-            const destinations = shipType === 'cargo' ? cargoDestinations : passengerDestinations;
-            const destinationIndex = destinations.findIndex(d => d.name === destinationName);
-            
-            if (destinationIndex !== -1) {
-                startSpecificMission(destinationIndex, 0, shipType); // Utilise la première mission (standard)
-            }
-        }
-
-        function startMissionByIndex(destinationIndex, shipType) {
-            // Fonction de compatibilité
-            startSpecificMission(destinationIndex, 0, shipType);
-        }
-
-        function refreshMission(destinationIndex) {
-            // Ajouter un timestamp pour forcer le changement de mission
-            const destinations = gameState.currentFleetTab === 'cargo' ? cargoDestinations : passengerDestinations;
-            const dest = destinations[destinationIndex];
-            
-            // Utiliser un timestamp pour forcer une nouvelle mission aléatoire
-            dest.lastRefresh = Date.now();
-            
-            // Rafraîchir l'affichage
-            updateFleetDisplay();
-            
-            showNotification(`🔄 Nouvelle mission générée pour ${dest.name}`, '#FF9800');
-        }
-
-        function updateMissionRefreshInfo() {
-            const missionRefreshInfo = document.getElementById('mission-refresh-info');
-            if (!missionRefreshInfo) return;
-            
-            const now = Date.now();
-            const missionRefreshInterval = 10 * 60 * 1000; // 10 minutes
-            const timeSinceLastRefresh = now - (gameState.lastMissionRefresh || 0);
-            const timeUntilNextRefresh = missionRefreshInterval - timeSinceLastRefresh;
-            
-            if (timeUntilNextRefresh <= 0) {
-                missionRefreshInfo.innerHTML = `
-                    <span style="color: #4CAF50; font-weight: bold;">
-                        ✨ Nouvelles missions disponibles ! 
-                        <button onclick="manualRefreshAllMissions()" style="background: #4CAF50; border: none; color: white; padding: 5px 10px; border-radius: 5px; margin-left: 10px; cursor: pointer;">
-                            🔄 Actualiser
-                        </button>
-                    </span>
-                `;
-            } else {
-                const minutesLeft = Math.floor(timeUntilNextRefresh / (60 * 1000));
-                const secondsLeft = Math.floor((timeUntilNextRefresh % (60 * 1000)) / 1000);
-                
-                missionRefreshInfo.innerHTML = `
-                    🔄 Renouvellement automatique des missions dans : 
-                    <strong style="color: #FF9800;">
-                        ${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}
-                    </strong>
-                    <span style="font-size: 0.8em; opacity: 0.7; margin-left: 10px;">
-                        (ou utilisez le bouton 🔄 sur chaque mission)
-                    </span>
-                `;
-            }
-        }
-
-        function manualRefreshAllMissions() {
-            const now = Date.now();
-            gameState.lastMissionRefresh = now;
-            
-            // Renouveler toutes les missions
-            [...cargoDestinations, ...passengerDestinations].forEach(dest => {
-                dest.lastRefresh = now;
+                container.appendChild(destCard);
             });
-            
-            updateFleetDisplay();
-            showNotification('🔄 Toutes les missions ont été renouvelées !', '#4CAF50');
         }
 
         function updateShopDisplay() {
-            const portUpgrades = document.getElementById('port-upgrades');
-            const cargoShipUpgrades = document.getElementById('cargo-ship-upgrades');
-            const passengerShipUpgrades = document.getElementById('passenger-ship-upgrades');
-            const newCargoShips = document.getElementById('new-cargo-ships');
-            const newPassengerShips = document.getElementById('new-passenger-ships');
-            
-            // Améliorations du port
-            const portUpgradeCost = gameState.portLevel * 10000;
-            portUpgrades.innerHTML = `
-                <div class="upgrade-card">
-                    <h4>🏗️ Port Niveau ${gameState.portLevel}</h4>
-                    <p>Amélioration: Niveau ${gameState.portLevel + 1}</p>
-                    <p>Coût: ${portUpgradeCost.toLocaleString()}€</p>
-                    <p>Bonus: +${gameState.portLevel * 10}% revenus missions</p>
-                    <button class="upgrade-btn" onclick="upgradePort()" ${gameState.money < portUpgradeCost ? 'disabled' : ''}>
-                        Améliorer Port
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+
+            gameState.shopItems.forEach(item => {
+                const shopItem = document.createElement('div');
+                shopItem.className = 'shop-item';
+
+                const canAfford = gameState.money >= item.price;
+                const buttonClass = canAfford ? 'btn' : 'btn';
+                const buttonText = canAfford ? 'Acheter' : 'Pas assez d\'argent';
+
+                shopItem.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <div>Capacité: ${item.specs.capacity}</div>
+                    <div>Vitesse: ${item.specs.speed}x</div>
+                    <div>Consommation: ${item.specs.fuelConsumption}x</div>
+                    <div class="price">${item.price}€</div>
+                    <button class="${buttonClass}" onclick="buyItem(${item.id})" ${!canAfford ? 'disabled' : ''}>
+                        ${buttonText}
                     </button>
+                `;
+
+                container.appendChild(shopItem);
+            });
+        }
+
+        function updateStatsDisplay() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="ship-stats">
+                    <div class="stat">
+                        <div class="stat-value">${gameState.statistics.totalEarnings}</div>
+                        <div class="stat-label">Gains totaux (€)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${gameState.statistics.totalTrips}</div>
+                        <div class="stat-label">Voyages effectués</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${gameState.statistics.totalDistance}</div>
+                        <div class="stat-label">Distance parcourue (h)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${gameState.statistics.totalFuelConsumed}</div>
+                        <div class="stat-label">Carburant consommé (L)</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${gameState.ships.length}</div>
+                        <div class="stat-label">Navires possédés</div>
+                    </div>
                 </div>
             `;
-            
-            // Améliorations des navires cargo
-            cargoShipUpgrades.innerHTML = gameState.cargoShips.map(ship => {
-                const upgradeCost = ship.level * 2000;
-                const currentMaintenanceCost = Math.floor((ship.level * ship.capacity) / 10) * 2;
-                const newMaintenanceCost = Math.floor(((ship.level + 1) * ship.capacity) / 10) * 2;
-                const currentRiskReduction = (ship.level - 1) * 2;
-                const newRiskReduction = ship.level * 2;
-                
-                return `
-                    <div class="upgrade-card">
-                        <h4>🚢 ${ship.name} (Niveau ${ship.level})</h4>
-                        <p>Capacité actuelle: ${ship.capacity * ship.level} tonnes</p>
-                        <p>Coût entretien actuel: ${currentMaintenanceCost}€ par mission</p>
-                        <p style="color: #4CAF50;">🛡️ Réduction risque actuelle: -${currentRiskReduction}%</p>
-                        <hr style="margin: 10px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <p>Coût amélioration: ${upgradeCost.toLocaleString()}€</p>
-                        <p>Nouvelle capacité: ${ship.capacity * (ship.level + 1)} tonnes</p>
-                        <p>Nouvel entretien: ${newMaintenanceCost}€ par mission</p>
-                        <p style="color: #4CAF50; font-weight: bold;">🛡️ Nouvelle réduction risque: -${newRiskReduction}%</p>
-                        <button class="upgrade-btn" onclick="upgradeShip(${ship.id}, 'cargo')" ${gameState.money < upgradeCost ? 'disabled' : ''}>
-                            Améliorer
-                        </button>
-                    </div>
-                `;
-            }).join('');
-            
-            // Améliorations des navires passagers
-            passengerShipUpgrades.innerHTML = gameState.passengerShips.map(ship => {
-                const upgradeCost = ship.level * 2500;
-                const currentMaintenanceCost = Math.floor((ship.level * ship.capacity) / 10) * 3;
-                const newMaintenanceCost = Math.floor(((ship.level + 1) * ship.capacity) / 10) * 3;
-                
-                return `
-                    <div class="upgrade-card">
-                        <h4>🛳️ ${ship.name} (Niveau ${ship.level})</h4>
-                        <p>Capacité actuelle: ${ship.capacity * ship.level} passagers</p>
-                        <p>Coût entretien actuel: ${currentMaintenanceCost}€ par mission</p>
-                        <hr style="margin: 10px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <p>Coût amélioration: ${upgradeCost.toLocaleString()}€</p>
-                        <p>Nouvelle capacité: ${ship.capacity * (ship.level + 1)} passagers</p>
-                        <p>Nouvel entretien: ${newMaintenanceCost}€ par mission</p>
-                        <p style="color: #4CAF50; font-weight: bold;">📈 Plus de missions disponibles !</p>
-                        <button class="upgrade-btn" onclick="upgradeShip(${ship.id}, 'passenger')" ${gameState.money < upgradeCost ? 'disabled' : ''}>
-                            Améliorer
-                        </button>
-                    </div>
-                `;
-            }).join('');
-            
-            // Nouveaux navires cargo
-            newCargoShips.innerHTML = cargoShipTypes.map((shipType, index) => {
-                const maintenanceCost = Math.floor((shipType.level * shipType.capacity) / 10) * 2;
-                
-                return `
-                    <div class="upgrade-card">
-                        <h4>🚢 ${shipType.name}</h4>
-                        <p>Capacité: ${shipType.capacity} tonnes</p>
-                        <p>Coût entretien: ${maintenanceCost}€ par mission</p>
-                        <p style="color: #4CAF50;">📦 Peut transporter plus de marchandises</p>
-                        <p>Coût d'achat: ${shipType.cost.toLocaleString()}€</p>
-                        <button class="upgrade-btn" onclick="buyShip(${index}, 'cargo')" ${gameState.money < shipType.cost ? 'disabled' : ''}>
-                            Acheter
-                        </button>
-                    </div>
-                `;
-            }).join('');
-            
-            // Nouveaux navires passagers
-            newPassengerShips.innerHTML = passengerShipTypes.map((shipType, index) => {
-                const maintenanceCost = Math.floor((shipType.level * shipType.capacity) / 10) * 3;
-                
-                return `
-                    <div class="upgrade-card">
-                        <h4>🛳️ ${shipType.name}</h4>
-                        <p>Capacité: ${shipType.capacity} passagers</p>
-                        <p>Coût entretien: ${maintenanceCost}€ par mission</p>
-                        <p style="color: #4CAF50;">👥 Peut accueillir plus de passagers</p>
-                        <p>Coût d'achat: ${shipType.cost.toLocaleString()}€</p>
-                        <button class="upgrade-btn" onclick="buyShip(${index}, 'passenger')" ${gameState.money < shipType.cost ? 'disabled' : ''}>
-                            Acheter
-                        </button>
-                    </div>
-                `;
-            }).join('');
         }
 
-        function upgradePort() {
-            const cost = gameState.portLevel * 10000;
+        // Fonctions de navigation
+        function showScreen(screenName) {
+            currentScreen = screenName;
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(screenName + '-screen').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Fonctions audio
+        function playSound(type) {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            
+            if (type === 'departure') {
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.frequency.setValueAtTime(150, context.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, context.currentTime + 1);
+                
+                gainNode.gain.setValueAtTime(0, context.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, context.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 1);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 1);
+                
+            } else if (type === 'arrival') {
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.frequency.setValueAtTime(800, context.currentTime);
+                oscillator.frequency.setValueAtTime(600, context.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, context.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0, context.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.4, context.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.5);
+                
+            } else if (type === 'money') {
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        
+                        oscillator.frequency.setValueAtTime(1000 + Math.random() * 500, context.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(600 + Math.random() * 200, context.currentTime + 0.1);
+                        
+                        gainNode.gain.setValueAtTime(0, context.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.2, context.currentTime + 0.01);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.15);
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        
+                        oscillator.start(context.currentTime);
+                        oscillator.stop(context.currentTime + 0.15);
+                    }, i * 50);
+                }
+            } else if (type === 'fuel') {
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.frequency.setValueAtTime(300, context.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(250, context.currentTime + 0.5);
+                
+                gainNode.gain.setValueAtTime(0, context.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, context.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.8);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.start(context.currentTime);
+                oscillator.stop(context.currentTime + 0.8);
+            }
+        }
+
+        // Fonctions Carburant
+        function buyFuel(amount, cost) {
             if (gameState.money >= cost) {
                 gameState.money -= cost;
-                gameState.portLevel++;
-                
-                // Son d'amélioration
-                audioManager.playSound('upgrade');
-                
-                showNotification(`Port amélioré ! Niveau ${gameState.portLevel}`, '#4CAF50');
+                gameState.fuel += amount;
+                playSound('fuel');
+                showNotification(`+${amount}L de carburant acheté pour ${cost}€!`);
                 updateDisplay();
-                updateShopDisplay();
-                saveGame();
             } else {
-                audioManager.playSound('error');
+                showNotification('Pas assez d\'argent pour acheter ce carburant!');
             }
         }
 
-        function upgradeShip(shipId, shipType) {
-            const ships = shipType === 'cargo' ? gameState.cargoShips : gameState.passengerShips;
-            const ship = ships.find(s => s.id === shipId);
-            const cost = ship.level * (shipType === 'cargo' ? 2000 : 2500);
+        // Fonctions Admin
+        function applyEconomySettings() {
+            const startMoney = parseInt(document.getElementById('startMoney').value) || 1000;
+            const startFuel = parseInt(document.getElementById('startFuel').value) || 100;
+            const rewardMultiplier = parseFloat(document.getElementById('rewardMultiplier').value) || 1.0;
             
-            if (gameState.money >= cost) {
-                gameState.money -= cost;
-                ship.level++;
-                const shipIcon = shipType === 'cargo' ? '🚢' : '🛳️';
-                
-                // Son d'amélioration
-                audioManager.playSound('upgrade');
-                
-                showNotification(`${shipIcon} ${ship.name} amélioré !`, '#4CAF50');
-                updateDisplay();
-                updateShopDisplay();
-                saveGame();
-            } else {
-                audioManager.playSound('error');
-            }
+            gameState.adminSettings.startMoney = startMoney;
+            gameState.adminSettings.startFuel = startFuel;
+            gameState.adminSettings.rewardMultiplier = rewardMultiplier;
+            
+            showNotification('Paramètres économiques appliqués !');
         }
 
-        function buyShip(shipTypeIndex, shipCategory) {
-            const shipTypes = shipCategory === 'cargo' ? cargoShipTypes : passengerShipTypes;
-            const shipType = shipTypes[shipTypeIndex];
+        function applyShipPrices() {
+            const prices = [
+                parseInt(document.getElementById('ship1Price').value) || 2500,
+                parseInt(document.getElementById('ship2Price').value) || 5000,
+                parseInt(document.getElementById('ship3Price').value) || 15000,
+                parseInt(document.getElementById('ship4Price').value) || 25000
+            ];
             
-            if (gameState.money >= shipType.cost) {
-                gameState.money -= shipType.cost;
-                const ships = shipCategory === 'cargo' ? gameState.cargoShips : gameState.passengerShips;
-                const shipIcon = shipCategory === 'cargo' ? '🚢' : '🛳️';
-                
-                const newShip = {
-                    id: Date.now(),
-                    name: shipType.name + ' #' + (ships.length + 1),
-                    level: shipType.level,
-                    capacity: shipType.capacity,
-                    onMission: false,
-                    missionEnd: 0,
-                    destination: null,
-                    type: shipType.type
-                };
-                
-                ships.push(newShip);
-                
-                // Son d'achat
-                audioManager.playSound('purchase');
-                
-                showNotification(`${shipIcon} ${newShip.name} acheté !`, '#4CAF50');
-                updateDisplay();
-                updateShopDisplay();
-                saveGame();
-            } else {
-                audioManager.playSound('error');
-            }
-        }
-
-        function updateBankDisplay() {
-            // Mettre à jour le résumé financier
-            document.getElementById('bank-liquid-money').textContent = Math.floor(gameState.money).toLocaleString() + '€';
-            document.getElementById('bank-savings').textContent = Math.floor(gameState.savings).toLocaleString() + '€';
-            document.getElementById('bank-debt').textContent = Math.floor(gameState.debt).toLocaleString() + '€';
+            gameState.shopItems.forEach((item, index) => {
+                if (index < prices.length) {
+                    item.price = prices[index];
+                }
+            });
             
-            const netWorth = gameState.money + gameState.savings - gameState.debt;
-            const netWorthElement = document.getElementById('bank-net-worth');
-            netWorthElement.textContent = Math.floor(netWorth).toLocaleString() + '€';
-            netWorthElement.style.color = netWorth >= 0 ? '#4CAF50' : '#ff6b6b';
-            
-            // Informations sur le prêt
-            const loanInfo = document.getElementById('loan-info');
-            if (gameState.debt > 0) {
-                const hourlyInterest = Math.floor(gameState.debt * gameState.loanInterestRate);
-                loanInfo.innerHTML = `
-                    <div class="loan-info">
-                        <h4>Prêt Actuel</h4>
-                        <p>Montant dû: ${Math.floor(gameState.debt).toLocaleString()}€</p>
-                        <p>Intérêts par heure: ${hourlyInterest.toLocaleString()}€ (5%)</p>
-                        
-                        <div class="input-group">
-                            <label>Montant à rembourser:</label>
-                            <input type="number" id="repay-amount" placeholder="Montant (laisser vide pour tout rembourser)">
-                        </div>
-                        
-                        <button class="bank-btn" onclick="repayLoanPartial()">Remboursement Partiel</button>
-                        <button class="bank-btn" onclick="repayLoanFull()" style="background: #FF5722;">Rembourser Tout</button>
-                    </div>
-                `;
-            } else {
-                loanInfo.innerHTML = '<p>Aucun prêt en cours</p>';
-            }
-        }
-
-        function deposit() {
-            const amount = parseInt(document.getElementById('deposit-amount').value);
-            if (amount > 0 && gameState.money >= amount) {
-                gameState.money -= amount;
-                gameState.savings += amount;
-                document.getElementById('deposit-amount').value = '';
-                
-                // Son d'argent
-                audioManager.playSound('coin');
-                
-                showNotification(`${amount.toLocaleString()}€ déposé !`, '#4CAF50');
-                updateDisplay();
-                saveGame();
-            } else if (amount > 0) {
-                audioManager.playSound('error');
-            }
-        }
-
-        function withdraw() {
-            const amount = parseInt(document.getElementById('deposit-amount').value);
-            if (amount > 0 && gameState.savings >= amount) {
-                gameState.savings -= amount;
-                gameState.money += amount;
-                document.getElementById('deposit-amount').value = '';
-                
-                // Son d'argent
-                audioManager.playSound('coin');
-                
-                showNotification(`${amount.toLocaleString()}€ retiré !`, '#4CAF50');
-                updateDisplay();
-                saveGame();
-            } else if (amount > 0) {
-                audioManager.playSound('error');
-            }
-        }
-
-        function takeLoan() {
-            const amount = parseInt(document.getElementById('loan-amount').value);
-            if (amount > 0 && gameState.debt === 0) {
-                gameState.money += amount;
-                gameState.debt += amount;
-                document.getElementById('loan-amount').value = '';
-                showNotification(`Prêt de ${amount.toLocaleString()}€ accordé !`, '#2196F3');
-                updateDisplay();
-                updateBankDisplay();
-                saveGame();
-            } else if (gameState.debt > 0) {
-                showNotification('Remboursez votre prêt actuel d\'abord !', '#ff6b6b');
-            }
-        }
-
-        function repayLoanPartial() {
-            const amount = parseInt(document.getElementById('repay-amount').value);
-            
-            if (!amount || amount <= 0) {
-                showNotification('Veuillez entrer un montant valide !', '#ff6b6b');
-                return;
-            }
-            
-            if (gameState.money < amount) {
-                showNotification('Fonds insuffisants !', '#ff6b6b');
-                return;
-            }
-            
-            if (amount > gameState.debt) {
-                showNotification('Le montant dépasse votre dette !', '#ff6b6b');
-                return;
-            }
-            
-            gameState.money -= amount;
-            gameState.debt -= amount;
-            document.getElementById('repay-amount').value = '';
-            
-            showNotification(`${amount.toLocaleString()}€ remboursé ! Dette restante: ${Math.floor(gameState.debt).toLocaleString()}€`, '#4CAF50');
+            showNotification('Prix des navires modifiés !');
             updateDisplay();
-            updateBankDisplay();
-            saveGame();
         }
 
-        function repayLoanFull() {
-            if (gameState.money >= gameState.debt) {
-                gameState.money -= gameState.debt;
-                const paidAmount = Math.floor(gameState.debt);
-                gameState.debt = 0;
-                showNotification(`Prêt de ${paidAmount.toLocaleString()}€ entièrement remboursé ! 🎉`, '#4CAF50');
-                updateDisplay();
-                updateBankDisplay();
-                saveGame();
-            } else {
-                showNotification('Fonds insuffisants pour rembourser la totalité !', '#ff6b6b');
-            }
-        }
-
-        function repayLoan() {
-            // Fonction pour compatibilité (redirige vers remboursement total)
-            repayLoanFull();
-        }
-
-        function showNotification(message, color = '#4CAF50') {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.background = color;
-            notification.classList.add('show');
-            setTimeout(() => notification.classList.remove('show'), 3000);
-        }
-
-        // Fonction pour forcer la sauvegarde
-        function forceSave() {
-            saveGame();
+        function applyDestinationRewards() {
+            const rewards = [
+                parseInt(document.getElementById('dest1Reward').value) || 50,
+                parseInt(document.getElementById('dest2Reward').value) || 150,
+                parseInt(document.getElementById('dest3Reward').value) || 400,
+                parseInt(document.getElementById('dest4Reward').value) || 1200,
+                parseInt(document.getElementById('dest5Reward').value) || 2500,
+                parseInt(document.getElementById('dest6Reward').value) || 1800
+            ];
             
-            // Son de succès pour la sauvegarde
-            audioManager.playSound('coin');
+            gameState.destinations.forEach((dest, index) => {
+                if (index < rewards.length) {
+                    dest.reward = rewards[index];
+                }
+            });
             
-            showNotification('💾 Partie sauvegardée avec succès !', '#4CAF50');
+            showNotification('Gains des destinations modifiés !');
+            updateDisplay();
         }
 
-        // Fonction pour confirmer le reset
-        function confirmReset() {
-            const confirmMessage = "⚠️ ATTENTION ⚠️\n\nÊtes-vous sûr de vouloir recommencer une nouvelle partie ?\n\nToutes vos données actuelles seront perdues :\n• Argent et XP\n• Navires et améliorations\n• Progression et destinations débloquées\n• Série de récompenses quotidiennes\n\nCette action est IRRÉVERSIBLE !";
-            
-            if (confirm(confirmMessage)) {
-                resetGame();
-            }
+        function applyFuelSettings() {
+            const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 2;
+            gameState.adminSettings.fuelPricePerLiter = fuelPrice;
+            showNotification('Prix du carburant modifié !');
         }
 
-        // Fonction pour reset le jeu
-        function resetGame() {
-            // Supprimer la sauvegarde
-            localStorage.removeItem('maritimeTycoonSave');
+        function addMoney() {
+            gameState.money += 1000;
+            showNotification('+1000€ ajouté !');
+            updateDisplay();
+        }
+
+        function addFuel() {
+            gameState.fuel += 500;
+            showNotification('+500L de carburant ajouté !');
+            updateDisplay();
+        }
+
+        function maxReputation() {
+            gameState.reputation += 1000;
+            gameState.level = Math.floor(gameState.reputation / 100) + 1;
+            showNotification('Réputation maximisée !');
+            updateDisplay();
+        }
+
+        function resetToDefaults() {
+            document.getElementById('startMoney').value = 1000;
+            document.getElementById('startFuel').value = 100;
+            document.getElementById('rewardMultiplier').value = 1.0;
+            document.getElementById('fuelPrice').value = 2;
             
-            // Réinitialiser l'état du jeu aux valeurs par défaut
-            gameState = {
-                money: 10000,
-                xp: 0,
-                savings: 0,
-                debt: 0,
-                passiveIncome: 0,
-                portLevel: 1,
-                cargoShips: [
-                    { id: 1, name: "Cargo Express", level: 1, capacity: 100, onMission: false, missionEnd: 0, destination: null, type: "cargo" }
-                ],
-                passengerShips: [
-                    { id: 2, name: "Ferry Starter", level: 1, capacity: 150, onMission: false, missionEnd: 0, destination: null, type: "passenger" }
-                ],
-                missions: [],
-                loanInterestRate: 0.05,
-                savingsInterestRate: 0.02,
-                lastSave: Date.now(),
-                currentFleetTab: "cargo",
-                lastDailyReward: 0,
-                dailyRewardStreak: 0,
-                lastMissionRefresh: 0
+            document.getElementById('ship1Price').value = 2500;
+            document.getElementById('ship2Price').value = 5000;
+            document.getElementById('ship3Price').value = 15000;
+            document.getElementById('ship4Price').value = 25000;
+            
+            document.getElementById('dest1Reward').value = 50;
+            document.getElementById('dest2Reward').value = 150;
+            document.getElementById('dest3Reward').value = 400;
+            document.getElementById('dest4Reward').value = 1200;
+            document.getElementById('dest5Reward').value = 2500;
+            document.getElementById('dest6Reward').value = 1800;
+            
+            showNotification('Paramètres réinitialisés aux valeurs par défaut !');
+        }
+
+        function exportSettings() {
+            const settings = {
+                adminSettings: gameState.adminSettings,
+                shipPrices: gameState.shopItems.map(item => item.price),
+                destinationRewards: gameState.destinations.map(dest => dest.reward)
             };
             
-            // Réinitialiser les destinations
-            cargoDestinations.forEach(dest => {
-                dest.unlocked = dest.requiredXP === 0;
-            });
-            passengerDestinations.forEach(dest => {
-                dest.unlocked = dest.requiredXP === 0;
-            });
+            const dataStr = JSON.stringify(settings, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'maritime_empire_config.json';
+            link.click();
             
-            // Sauvegarder le nouvel état
-            saveGame();
-            
-            // Mettre à jour l'affichage
-            updateDisplay();
-            updateUnlockedDestinations();
-            
-            // Afficher confirmation
-            audioManager.playSound('daily_reward');
-            showNotification('🔄 Nouvelle partie commencée ! Bon voyage capitaine ! ⚓', '#2196F3');
+            showNotification('Configuration exportée !');
         }
 
-        // Charger la sauvegarde
-        function loadGame() {
-            const saved = localStorage.getItem('maritimeTycoonSave');
-            if (saved) {
-                const savedState = JSON.parse(saved);
-                
-                // Rétrocompatibilité pour les anciennes sauvegardes
-                if (savedState.ships && !savedState.cargoShips) {
-                    savedState.cargoShips = savedState.ships.map(ship => ({
-                        ...ship,
-                        type: 'cargo'
-                    }));
-                    savedState.passengerShips = [
-                        { id: Date.now(), name: "Ferry Starter", level: 1, capacity: 150, onMission: false, missionEnd: 0, destination: null, type: "passenger" }
-                    ];
-                    delete savedState.ships;
+        function importSettings() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const settings = JSON.parse(e.target.result);
+                            
+                            if (settings.adminSettings) {
+                                gameState.adminSettings = settings.adminSettings;
+                            }
+                            if (settings.shipPrices) {
+                                settings.shipPrices.forEach((price, index) => {
+                                    if (gameState.shopItems[index]) {
+                                        gameState.shopItems[index].price = price;
+                                    }
+                                });
+                            }
+                            if (settings.destinationRewards) {
+                                settings.destinationRewards.forEach((reward, index) => {
+                                    if (gameState.destinations[index]) {
+                                        gameState.destinations[index].reward = reward;
+                                    }
+                                });
+                            }
+                            
+                            showNotification('Configuration importée avec succès !');
+                            updateDisplay();
+                        } catch (error) {
+                            showNotification('Erreur lors de l\'importation !');
+                        }
+                    };
+                    reader.readAsText(file);
                 }
+            };
+            input.click();
+        }
+
+        function resetGame() {
+            if (confirm('Êtes-vous sûr de vouloir recommencer le jeu ? Toutes vos données seront perdues !')) {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('maritimeEmpire')) {
+                        localStorage.removeItem(key);
+                    }
+                });
                 
-                // Fusionner avec l'état par défaut
-                gameState = { 
-                    ...gameState, 
-                    ...savedState,
-                    currentFleetTab: savedState.currentFleetTab || 'cargo',
-                    lastDailyReward: savedState.lastDailyReward || 0,
-                    dailyRewardStreak: savedState.dailyRewardStreak || 0,
-                    lastMissionRefresh: savedState.lastMissionRefresh || 0
+                gameState = {
+                    money: gameState.adminSettings?.startMoney || 1000,
+                    fuel: gameState.adminSettings?.startFuel || 100,
+                    reputation: 0,
+                    level: 1,
+                    ships: [
+                        {
+                            id: 1,
+                            name: "Petit Cargo",
+                            type: "cargo",
+                            capacity: 50,
+                            speed: 1,
+                            fuelConsumption: 1,
+                            status: "available",
+                            destination: null,
+                            arrivalTime: null,
+                            earnings: 0
+                        }
+                    ],
+                    destinations: [
+                        {
+                            id: 1,
+                            name: "Port Local",
+                            distance: 0.0833,
+                            reward: 50,
+                            reputation: 2,
+                            fuelCost: 5,
+                            description: "Livraison express locale"
+                        },
+                        {
+                            id: 2,
+                            name: "Marseille",
+                            distance: 2,
+                            reward: 150,
+                            reputation: 5,
+                            fuelCost: 15,
+                            description: "Port méditerranéen animé"
+                        },
+                        {
+                            id: 3,
+                            name: "Londres",
+                            distance: 6,
+                            reward: 400,
+                            reputation: 15,
+                            fuelCost: 40,
+                            description: "Grand port commercial"
+                        },
+                        {
+                            id: 4,
+                            name: "New York",
+                            distance: 24,
+                            reward: 1200,
+                            reputation: 40,
+                            fuelCost: 120,
+                            description: "Métropole américaine"
+                        },
+                        {
+                            id: 5,
+                            name: "Tokyo",
+                            distance: 48,
+                            reward: 2500,
+                            reputation: 80,
+                            fuelCost: 200,
+                            description: "Capital du Pacifique"
+                        },
+                        {
+                            id: 6,
+                            name: "Singapour",
+                            distance: 36,
+                            reward: 1800,
+                            reputation: 60,
+                            fuelCost: 150,
+                            description: "Hub asiatique"
+                        }
+                    ],
+                    shopItems: [
+                        {
+                            id: 1,
+                            name: "Cargo Standard",
+                            price: 2500,
+                            type: "ship",
+                            specs: { capacity: 100, speed: 1.2, fuelConsumption: 0.8 }
+                        },
+                        {
+                            id: 2,
+                            name: "Cargo Rapide",
+                            price: 5000,
+                            type: "ship",
+                            specs: { capacity: 80, speed: 2, fuelConsumption: 1.5 }
+                        },
+                        {
+                            id: 3,
+                            name: "Porte-conteneurs",
+                            price: 15000,
+                            type: "ship",
+                            specs: { capacity: 300, speed: 0.8, fuelConsumption: 2.5 }
+                        },
+                        {
+                            id: 4,
+                            name: "Yacht de Luxe",
+                            price: 25000,
+                            type: "ship",
+                            specs: { capacity: 20, speed: 3, fuelConsumption: 3 }
+                        }
+                    ],
+                    statistics: {
+                        totalEarnings: 0,
+                        totalTrips: 0,
+                        totalDistance: 0,
+                        totalFuelConsumed: 0
+                    },
+                    adminSettings: gameState.adminSettings || {
+                        rewardMultiplier: 1.0,
+                        startMoney: 1000,
+                        startFuel: 100,
+                        fuelPricePerLiter: 2
+                    }
                 };
                 
-                updateUnlockedDestinations();
-                
-                const timeOffline = Date.now() - gameState.lastSave;
-                if (timeOffline > 60000) {
-                    processOfflineProgress(timeOffline);
-                }
-                
-                // Vérifier si on peut récupérer des récompenses quotidiennes manquées
-                checkMissedDailyRewards(timeOffline);
-                
-                checkCompletedMissions();
+                selectedShip = null;
+                updateDisplay();
+                showNotification('Jeu réinitialisé avec succès ! Bon voyage capitaine ! 🚢');
             }
         }
 
-        function checkMissedDailyRewards(timeOffline) {
-            const rewardCooldown = 24 * 60 * 60 * 1000; // 24 heures réelles
+        // Fonctions de jeu
+        function selectShipForTravel(shipId) {
+            selectedShip = gameState.ships.find(ship => ship.id === shipId);
+            showScreen('destinations');
             
-            const daysMissed = Math.floor(timeOffline / rewardCooldown);
+            const info = document.getElementById('selected-ship-info');
+            info.innerHTML = `
+                <div style="background: rgba(0,212,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3>🚢 ${selectedShip.name} sélectionné</h3>
+                    <p>Capacité: ${selectedShip.capacity} | Vitesse: ${selectedShip.speed}x | Consommation: ${selectedShip.fuelConsumption}x</p>
+                </div>
+            `;
+        }
+
+        function selectDestination(destination) {
+            if (!selectedShip) {
+                showNotification('Veuillez d\'abord sélectionner un navire');
+                return;
+            }
+
+            const fuelRequired = Math.ceil(destination.fuelCost * selectedShip.fuelConsumption);
             
-            if (daysMissed > 0 && gameState.lastDailyReward > 0) {
-                let totalMissedReward = 0;
+            if (gameState.fuel < fuelRequired) {
+                showNotification(`Carburant insuffisant ! Il vous faut ${fuelRequired}L pour ce voyage.`);
+                return;
+            }
+
+            const modal = document.getElementById('travel-modal');
+            const details = document.getElementById('travel-details');
+            
+            let travelTime = destination.distance / selectedShip.speed;
+            if (destination.name === "Port Local") {
+                travelTime = 5 / 60;
+            }
+            
+            const baseEarnings = Math.floor(destination.reward * (selectedShip.capacity / 100));
+            const earnings = Math.floor(baseEarnings * (gameState.adminSettings?.rewardMultiplier || 1.0));
+
+            const timeDisplay = destination.name === "Port Local" ? 
+                "5 minutes" :
+                (travelTime < 1 ? 
+                    Math.round(travelTime * 60) + ' minutes' : 
+                    Math.round(travelTime) + ' heure(s)');
+
+            details.innerHTML = `
+                <h3>🚢 ${selectedShip.name} → ${destination.name}</h3>
+                <div style="margin: 20px 0;">
+                    <div><strong>Temps de voyage:</strong> ${timeDisplay}</div>
+                    <div><strong>Gains estimés:</strong> ${earnings}€</div>
+                    <div><strong>Réputation:</strong> +${destination.reputation}</div>
+                    <div><strong>Carburant requis:</strong> ${fuelRequired}L</div>
+                    <div style="margin-top: 10px; opacity: 0.8;">${destination.description}</div>
+                </div>
+            `;
+
+            modal.style.display = 'block';
+            modal.selectedDestination = destination;
+        }
+
+        function startTravel() {
+            const destination = document.getElementById('travel-modal').selectedDestination;
+            const fuelRequired = Math.ceil(destination.fuelCost * selectedShip.fuelConsumption);
+            
+            let travelTime = destination.distance / selectedShip.speed;
+            
+            if (destination.name === "Port Local") {
+                travelTime = 5 / 60;
+            }
+            
+            // Déduire le carburant
+            gameState.fuel -= fuelRequired;
+            gameState.statistics.totalFuelConsumed += fuelRequired;
+            
+            selectedShip.status = 'traveling';
+            selectedShip.destination = destination;
+            selectedShip.departureTime = Date.now();
+            selectedShip.travelTime = travelTime;
+            
+            const baseEarnings = Math.floor(destination.reward * (selectedShip.capacity / 100));
+            selectedShip.earnings = Math.floor(baseEarnings * (gameState.adminSettings?.rewardMultiplier || 1.0));
+
+            playSound('departure');
+
+            closeModal();
+            showNotification(`${selectedShip.name} part vers ${destination.name}! (-${fuelRequired}L carburant)`);
+            selectedShip = null;
+            
+            updateDisplay();
+            showScreen('fleet');
+        }
+
+        function buyItem(itemId) {
+            const item = gameState.shopItems.find(i => i.id === itemId);
+            if (gameState.money >= item.price) {
+                gameState.money -= item.price;
                 
-                // Calculer les récompenses manquées (max 3 jours de rattrapage)
-                const maxCatchup = Math.min(daysMissed, 3);
+                const newShip = {
+                    id: gameState.ships.length + 1,
+                    name: item.name,
+                    type: item.type,
+                    capacity: item.specs.capacity,
+                    speed: item.specs.speed,
+                    fuelConsumption: item.specs.fuelConsumption,
+                    status: 'available',
+                    destination: null,
+                    arrivalTime: null,
+                    earnings: 0
+                };
                 
-                for (let i = 0; i < maxCatchup; i++) {
-                    const baseReward = 1000;
-                    const streakBonus = (gameState.dailyRewardStreak + i) * 500;
-                    totalMissedReward += baseReward + streakBonus;
-                }
-                
-                if (totalMissedReward > 0) {
-                    gameState.money += totalMissedReward;
-                    gameState.dailyRewardStreak += maxCatchup;
-                    gameState.lastDailyReward = Date.now() - (timeOffline % rewardCooldown);
+                gameState.ships.push(newShip);
+                showNotification(`${item.name} acheté avec succès!`);
+                updateDisplay();
+            }
+        }
+
+        function checkArrivals() {
+            gameState.ships.forEach(ship => {
+                if (ship.status === 'traveling') {
+                    const travelTime = ship.travelTime * 60 * 60 * 1000;
+                    const elapsed = Date.now() - ship.departureTime;
                     
-                    showNotification(`🎁 Rattrapage ! Vous avez récupéré ${maxCatchup} récompenses quotidiennes : +${totalMissedReward.toLocaleString()}€`, '#FFC107');
-                }
-            }
-        }
-
-        function saveGame() {
-            gameState.lastSave = Date.now();
-            localStorage.setItem('maritimeTycoonSave', JSON.stringify(gameState));
-        }
-
-        function updateUnlockedDestinations() {
-            cargoDestinations.forEach(dest => {
-                if (gameState.xp >= dest.requiredXP) {
-                    dest.unlocked = true;
-                }
-            });
-            passengerDestinations.forEach(dest => {
-                if (gameState.xp >= dest.requiredXP) {
-                    dest.unlocked = true;
-                }
-            });
-        }
-
-        function processOfflineProgress(timeOffline) {
-            let offlineEarnings = 0;
-            let offlineXP = 0;
-            let completedMissions = 0;
-            
-            if (gameState.savings > 0) {
-                const minutesOffline = timeOffline / 60000;
-                const savingsInterest = gameState.savings * (gameState.savingsInterestRate * minutesOffline);
-                gameState.savings += savingsInterest;
-                offlineEarnings += savingsInterest;
-            }
-            
-            if (gameState.debt > 0) {
-                const minutesOffline = timeOffline / 60000;
-                const debtInterest = gameState.debt * (gameState.loanInterestRate * minutesOffline);
-                gameState.debt += debtInterest;
-            }
-            
-            const allShips = [...gameState.cargoShips, ...gameState.passengerShips];
-            allShips.forEach(ship => {
-                if (ship.onMission && ship.missionEnd <= Date.now()) {
-                    const destinations = ship.type === "cargo" ? cargoDestinations : passengerDestinations;
-                    const destination = destinations.find(d => d.name === ship.destination);
-                    if (destination) {
-                        const reward = Math.floor(destination.baseReward * gameState.portLevel * (ship.capacity * ship.level / 100));
-                        const xpReward = destination.baseXP;
+                    if (elapsed >= travelTime) {
+                        ship.status = 'available';
+                        gameState.money += ship.earnings;
+                        gameState.reputation += ship.destination.reputation;
+                        gameState.statistics.totalEarnings += ship.earnings;
+                        gameState.statistics.totalTrips += 1;
+                        gameState.statistics.totalDistance += ship.destination.distance;
                         
-                        offlineEarnings += reward;
-                        offlineXP += xpReward;
-                        completedMissions++;
+                        gameState.level = Math.floor(gameState.reputation / 100) + 1;
                         
-                        ship.onMission = false;
+                        playSound('arrival');
+                        setTimeout(() => playSound('money'), 500);
+                        
+                        showNotification(`${ship.name} est arrivé! +${ship.earnings}€`);
+                        
                         ship.destination = null;
-                        ship.missionEnd = 0;
+                        ship.departureTime = null;
+                        ship.travelTime = null;
+                        ship.earnings = 0;
                     }
                 }
             });
-            
-            if (completedMissions > 0) {
-                gameState.money += offlineEarnings;
-                gameState.xp += offlineXP;
-                showNotification(`Pendant votre absence: ${completedMissions} missions terminées! +${Math.floor(offlineEarnings)}€ +${offlineXP}XP`, '#4CAF50');
-            }
         }
 
-        function checkCompletedMissions() {
-            const allShips = [...gameState.cargoShips, ...gameState.passengerShips];
-            allShips.forEach(ship => {
-                if (ship.onMission && ship.missionEnd <= Date.now()) {
-                    completeMission(ship);
+        // Fonctions utilitaires
+        function closeModal() {
+            document.getElementById('travel-modal').style.display = 'none';
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function saveGame() {
+            const saveData = {
+                ...gameState,
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('maritimeEmpire_auto', JSON.stringify(saveData));
+            const saveKey = `maritimeEmpire_${Date.now()}`;
+            localStorage.setItem(saveKey, JSON.stringify(saveData));
+            
+            showNotification('Jeu sauvegardé avec succès!');
+        }
+
+        function loadGame() {
+            const saveData = localStorage.getItem('maritimeEmpire_auto');
+            if (saveData) {
+                const parsed = JSON.parse(saveData);
+                gameState = parsed;
+                
+                // Assurer la compatibilité avec les nouvelles fonctionnalités
+                if (!gameState.adminSettings) {
+                    gameState.adminSettings = {
+                        rewardMultiplier: 1.0,
+                        startMoney: 1000,
+                        startFuel: 100,
+                        fuelPricePerLiter: 2
+                    };
                 }
-            });
-        }
-
-        function completeMission(ship) {
-            const destinations = ship.type === "cargo" ? cargoDestinations : passengerDestinations;
-            const destination = destinations.find(d => d.name === ship.destination);
-            if (destination) {
-                const reward = Math.floor(destination.baseReward * gameState.portLevel * (ship.capacity * ship.level / 100));
-                const xpReward = destination.baseXP;
                 
-                gameState.money += reward;
-                gameState.xp += xpReward;
+                // Ajouter fuel si manquant
+                if (gameState.fuel === undefined) {
+                    gameState.fuel = 100;
+                }
                 
-                ship.onMission = false;
-                ship.destination = null;
-                ship.missionEnd = 0;
-                
-                updateUnlockedDestinations();
-                const shipType = ship.type === "cargo" ? "🚢" : "🛳️";
-                
-                // Son de mission réussie
-                audioManager.playSound('mission_success');
-                
-                showNotification(`${shipType} ${ship.name} est revenu ! +${reward}€ +${xpReward}XP`, '#4CAF50');
-                updateDisplay();
-                
-                saveGame();
-            }
-        }
-
-        function formatDuration(milliseconds) {
-            const hours = Math.floor(milliseconds / 3600000);
-            const minutes = Math.floor((milliseconds % 3600000) / 60000);
-            
-            if (hours > 0) {
-                return `${hours}h${minutes > 0 ? minutes + 'm' : ''}`;
-            } else {
-                return `${minutes}m`;
-            }
-        }
-
-        // Système de revenus passifs et d'intérêts
-        setInterval(() => {
-            if (gameState.savings > 0) {
-                const interest = gameState.savings * gameState.savingsInterestRate;
-                gameState.savings += interest;
-                gameState.passiveIncome = interest;
-            }
-            
-            if (gameState.debt > 0) {
-                const interest = gameState.debt * gameState.loanInterestRate;
-                gameState.debt += interest;
-            }
-            
-            updateDisplay();
-            saveGame();
-        }, 60000); // Chaque minute
-
-        // Vérification des missions en temps réel
-        setInterval(() => {
-            checkCompletedMissions();
-            
-            // Renouveler automatiquement les missions toutes les 10 minutes
-            const now = Date.now();
-            const missionRefreshInterval = 10 * 60 * 1000; // 10 minutes
-            if (now - gameState.lastMissionRefresh >= missionRefreshInterval) {
-                gameState.lastMissionRefresh = now;
-                // Renouveler toutes les missions
-                [...cargoDestinations, ...passengerDestinations].forEach(dest => {
-                    dest.lastRefresh = now;
+                // Ajouter fuelConsumption aux navires existants
+                gameState.ships.forEach(ship => {
+                    if (ship.fuelConsumption === undefined) {
+                        ship.fuelConsumption = 1;
+                    }
                 });
                 
-                if (document.getElementById('fleet-screen').classList.contains('active')) {
-                    updateFleetDisplay();
-                    showNotification('🔄 Nouvelles missions disponibles !', '#FF9800');
+                // Ajouter fuelCost aux destinations existantes
+                const defaultFuelCosts = [5, 15, 40, 120, 200, 150];
+                gameState.destinations.forEach((dest, index) => {
+                    if (dest.fuelCost === undefined) {
+                        dest.fuelCost = defaultFuelCosts[index] || 50;
+                    }
+                });
+                
+                // Ajouter totalFuelConsumed aux statistiques
+                if (gameState.statistics.totalFuelConsumed === undefined) {
+                    gameState.statistics.totalFuelConsumed = 0;
                 }
+                
+                updateDisplay();
+                showNotification('Jeu chargé avec succès!');
+            } else {
+                showNotification('Aucune sauvegarde trouvée');
             }
-            
-            if (document.getElementById('fleet-screen').classList.contains('active')) {
-                updateFleetDisplay();
-            }
-            
-            // Mettre à jour le compteur de récompense quotidienne sur la page principale
-            if (document.getElementById('main-screen').classList.contains('active')) {
-                updateMainDailyRewardDisplay();
-            }
-        }, 1000); // Chaque seconde
+        }
 
-        // Sauvegarde automatique toutes les 30 secondes
+        // Sauvegarde automatique toutes les 2 minutes
+        setInterval(saveGame, 120000);
+
+        // Vérification des arrivées toutes les 10 secondes
         setInterval(() => {
-            saveGame();
-        }, 30000);
-
-        // Sauvegarder avant de fermer la page
-        window.addEventListener('beforeunload', () => {
-            saveGame();
-        });
+            checkArrivals();
+            updateDisplay();
+        }, 10000);
 
         // Initialisation
-        loadGame();
-        updateDisplay();
-        updateUnlockedDestinations();
-        
-        // Initialiser l'audio au premier clic (requis par les navigateurs)
-        document.addEventListener('click', () => {
-            audioManager.initialize();
-        }, { once: true });
+        window.onload = function() {
+            const autoSave = localStorage.getItem('maritimeEmpire_auto');
+            if (autoSave) {
+                gameState = JSON.parse(autoSave);
+                
+                // Assurer la compatibilité
+                if (!gameState.adminSettings) {
+                    gameState.adminSettings = {
+                        rewardMultiplier: 1.0,
+                        startMoney: 1000,
+                        startFuel: 100,
+                        fuelPricePerLiter: 2
+                    };
+                }
+                
+                // Ajouter fuel si manquant
+                if (gameState.fuel === undefined) {
+                    gameState.fuel = 100;
+                }
+                
+                // Ajouter fuelConsumption aux navires existants
+                gameState.ships.forEach(ship => {
+                    if (ship.fuelConsumption === undefined) {
+                        ship.fuelConsumption = 1;
+                    }
+                });
+                
+                // Ajouter fuelCost aux destinations existantes
+                const defaultFuelCosts = [5, 15, 40, 120, 200, 150];
+                gameState.destinations.forEach((dest, index) => {
+                    if (dest.fuelCost === undefined) {
+                        dest.fuelCost = defaultFuelCosts[index] || 50;
+                    }
+                });
+                
+                // Ajouter totalFuelConsumed aux statistiques
+                if (gameState.statistics.totalFuelConsumed === undefined) {
+                    gameState.statistics.totalFuelConsumed = 0;
+                }
+            }
+            updateDisplay();
+        };
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('travel-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
     </script>
 </body>
 </html>
