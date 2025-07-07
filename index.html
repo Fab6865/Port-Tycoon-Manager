@@ -654,23 +654,6 @@
                 </div>
 
                 <div class="admin-card">
-                    <h3>🚢 Prix des Navires</h3>
-                    <label>Cargo Standard :</label>
-                    <input type="number" id="ship1Price" class="admin-input" placeholder="2500" value="2500">
-                    
-                    <label>Cargo Rapide :</label>
-                    <input type="number" id="ship2Price" class="admin-input" placeholder="5000" value="5000">
-                    
-                    <label>Porte-conteneurs :</label>
-                    <input type="number" id="ship3Price" class="admin-input" placeholder="15000" value="15000">
-                    
-                    <label>Yacht de Luxe :</label>
-                    <input type="number" id="ship4Price" class="admin-input" placeholder="25000" value="25000">
-                    
-                    <button class="admin-btn" onclick="applyShipPrices()">Appliquer Prix Navires</button>
-                </div>
-
-                <div class="admin-card">
                     <h3>🗺️ Gains Destinations</h3>
                     <label>Port Local :</label>
                     <input type="number" id="dest1Reward" class="admin-input" placeholder="50" value="50">
@@ -692,11 +675,35 @@
                     
                     <button class="admin-btn" onclick="applyDestinationRewards()">Appliquer Destinations</button>
                 </div>
+                <div class="admin-card">
+                    <h3>⛽ Carburant par Destination</h3>
+                    <label>Port Local :</label>
+                    <input type="number" id="dest1Fuel" class="admin-input" placeholder="5" value="5">
+                    <label>Marseille :</label>
+                    <input type="number" id="dest2Fuel" class="admin-input" placeholder="15" value="15">
+                    <label>Londres :</label>
+                    <input type="number" id="dest3Fuel" class="admin-input" placeholder="40" value="40">
+                    <label>New York :</label>
+                    <input type="number" id="dest4Fuel" class="admin-input" placeholder="120" value="120">
+                    <label>Tokyo :</label>
+                    <input type="number" id="dest5Fuel" class="admin-input" placeholder="200" value="200">
+                    <label>Singapour :</label>
+                    <input type="number" id="dest6Fuel" class="admin-input" placeholder="150" value="150">
+                    <button class="admin-btn" onclick="applyDestinationFuel()">Appliquer Carburant</button>
+                </div>
 
                 <div class="admin-card">
-                    <h3>⛽ Prix du Carburant</h3>
-                    <label>Prix par litre :</label>
-                    <input type="number" id="fuelPrice" class="admin-input" placeholder="2" value="2" step="0.1">
+                    <h3>🚢 Prix des Navires</h3>
+                    <label>Cargo Standard :</label>
+                    <input type="number" id="ship1Price" class="admin-input" placeholder="2500" value="2500">
+                    
+                    <label>Cargo Rapide :</label>
+                    <input type="number" id="ship2Price" class="admin-input" placeholder="5000" value="5000">
+                    
+                    <label>Porte-conteneurs :</label>
+                    <input type="number" id="ship3Price" class="admin-input" placeholder="15000" value="15000">
+                    
+                    <label>Yacht de Luxe :</label>
                     
                     <button class="admin-btn" onclick="applyFuelSettings()">Appliquer Carburant</button>
                 </div>
@@ -1182,6 +1189,24 @@
             updateDisplay();
         }
 
+        function applyDestinationFuel() {
+            const fuels = [
+                parseInt(document.getElementById('dest1Fuel').value) || 5,
+                parseInt(document.getElementById('dest2Fuel').value) || 15,
+                parseInt(document.getElementById('dest3Fuel').value) || 40,
+                parseInt(document.getElementById('dest4Fuel').value) || 120,
+                parseInt(document.getElementById('dest5Fuel').value) || 200,
+                parseInt(document.getElementById('dest6Fuel').value) || 150
+            ];
+            gameState.destinations.forEach((dest, i) => {
+                if (i < fuels.length) {
+                    dest.fuelCost = fuels[i];
+                }
+            });
+            showNotification('Carburant requis par destination modifié !');
+            updateDisplay();
+        }
+
         function applyFuelSettings() {
             const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 2;
             gameState.adminSettings.fuelPricePerLiter = fuelPrice;
@@ -1225,6 +1250,14 @@
             document.getElementById('dest5Reward').value = 2500;
             document.getElementById('dest6Reward').value = 1800;
             
+            // Reset carburant par destination (si les champs existent)
+            if(document.getElementById('dest1Fuel')) document.getElementById('dest1Fuel').value = 5;
+            if(document.getElementById('dest2Fuel')) document.getElementById('dest2Fuel').value = 15;
+            if(document.getElementById('dest3Fuel')) document.getElementById('dest3Fuel').value = 40;
+            if(document.getElementById('dest4Fuel')) document.getElementById('dest4Fuel').value = 120;
+            if(document.getElementById('dest5Fuel')) document.getElementById('dest5Fuel').value = 200;
+            if(document.getElementById('dest6Fuel')) document.getElementById('dest6Fuel').value = 150;
+            
             showNotification('Paramètres réinitialisés aux valeurs par défaut !');
         }
 
@@ -1232,7 +1265,8 @@
             const settings = {
                 adminSettings: gameState.adminSettings,
                 shipPrices: gameState.shopItems.map(item => item.price),
-                destinationRewards: gameState.destinations.map(dest => dest.reward)
+                destinationRewards: gameState.destinations.map(dest => dest.reward),
+                destinationFuelCosts: gameState.destinations.map(dest => dest.fuelCost)
             };
             
             const dataStr = JSON.stringify(settings, null, 2);
@@ -1272,6 +1306,13 @@
                                 settings.destinationRewards.forEach((reward, index) => {
                                     if (gameState.destinations[index]) {
                                         gameState.destinations[index].reward = reward;
+                                    }
+                                });
+                            }
+                            if (settings.destinationFuelCosts) {
+                                settings.destinationFuelCosts.forEach((fuel, index) => {
+                                    if (gameState.destinations[index]) {
+                                        gameState.destinations[index].fuelCost = fuel;
                                     }
                                 });
                             }
