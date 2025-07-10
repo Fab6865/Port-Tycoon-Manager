@@ -577,6 +577,7 @@
             <button class="nav-btn" onclick="showScreen('destinations')">🗺️ Destinations</button>
             <button class="nav-btn" onclick="showScreen('shop')">🛒 Boutique</button>
             <button class="nav-btn" onclick="showScreen('admin')">⚙️ Admin</button>
+            <button class="nav-btn" onclick="showScreen('gasfactory')">🏭 Usine à Gasoil</button>
             <button class="nav-btn" onclick="showScreen('stats')">📊 Statistiques</button>
         </div>
 
@@ -654,6 +655,17 @@
                 </div>
 
                 <div class="admin-card">
+                    <h3>🏭 Usine à Gasoil</h3>
+                    <label>Intervalle production (secondes) :</label>
+                    <input type="number" id="admin-gasfactory-interval" class="admin-input" placeholder="3600" value="3600">
+                    <label>Litres/cycle :</label>
+                    <input type="number" id="admin-gasfactory-prod" class="admin-input" placeholder="2" value="2">
+                    <label>Prix amélioration (€) :</label>
+                    <input type="number" id="admin-gasfactory-upgrade-price" class="admin-input" placeholder="500" value="500">
+                    <button class="admin-btn" onclick="applyGasFactorySettings()">Appliquer Usine</button>
+                </div>
+
+                <div class="admin-card">
                     <h3>🗺️ Gains Destinations</h3>
                     <label>Port Local :</label>
                     <input type="number" id="dest1Reward" class="admin-input" placeholder="50" value="50">
@@ -723,6 +735,18 @@
         <div id="stats-screen" class="screen">
             <h2>📊 Statistiques de l'Empire</h2>
             <div id="stats-container"></div>
+        </div>
+
+        <div id="gasfactory-screen" class="screen">
+            <h2>🏭 Usine à Gasoil</h2>
+            <div id="gasfactory-container" style="margin-top: 25px;">
+                <div style="font-size: 18px; margin-bottom: 10px;">Niveau : <span id="gasfactory-level"></span></div>
+                <div style="font-size: 16px;">Production/cycle : <span id="gasfactory-prod"></span> L</div>
+                <div style="font-size: 16px;">Intervalle : <span id="gasfactory-interval"></span></div>
+                <div style="font-size: 16px;">Stock actuel : <span id="gasfactory-stock"></span> L</div>
+                <div style="font-size: 16px; margin-top:10px;">Prix amélioration : <span id="gasfactory-upgrade-price"></span> €</div>
+                <button id="gasfactory-upgrade-btn" class="btn" style="margin-top: 18px;" onclick="upgradeGasFactory()">🔼 Améliorer l'usine</button>
+            </div>
         </div>
     </div>
 
@@ -861,6 +885,128 @@
         let selectedShip = null;
         let currentScreen = 'fleet';
 
+        // Ajout structure usine à gasoil si absente
+        function ensureGasFactory() {
+            if (!gameState.gasFactory) {
+                gameState.gasFactory = {};
+            }
+            if (typeof gameState.gasFactory.level !== 'number') gameState.gasFactory.level = 1;
+            if (typeof gameState.gasFactory.productionPerCycle !== 'number') gameState.gasFactory.productionPerCycle = 2;
+            if (typeof gameState.gasFactory.productionInterval !== 'number') gameState.gasFactory.productionInterval = 3600000;
+            if (typeof gameState.gasFactory.nextUpgradePrice !== 'number') gameState.gasFactory.nextUpgradePrice = 500;
+        }
+
+        // Affichage usine à gasoil
+        function updateGasFactoryDisplay() {
+            ensureGasFactory();
+            if (!document.getElementById('gasfactory-level')) return;
+            document.getElementById('gasfactory-level').textContent = gameState.gasFactory.level;
+            document.getElementById('gasfactory-prod').textContent = gameState.gasFactory.productionPerCycle;
+            document.getElementById('gasfactory-interval').textContent = msToHuman(gameState.gasFactory.productionInterval);
+            document.getElementById('gasfactory-stock').textContent = gameState.fuel;
+            document.getElementById('gasfactory-upgrade-price').textContent = gameState.gasFactory.nextUpgradePrice;
+            document.getElementById('gasfactory-upgrade-btn').disabled = gameState.money < gameState.gasFactory.nextUpgradePrice;
+        }
+        window.updateGasFactoryDisplay = updateGasFactoryDisplay;
+
+        // Amélioration usine à gasoil
+        function upgradeGasFactory() {
+            ensureGasFactory();
+            if (gameState.money >= gameState.gasFactory.nextUpgradePrice) {
+                gameState.money -= gameState.gasFactory.nextUpgradePrice;
+                gameState.gasFactory.level += 1;
+                gameState.gasFactory.productionPerCycle += 1;
+                gameState.gasFactory.nextUpgradePrice = Math.floor(gameState.gasFactory.nextUpgradePrice * 1.6);
+                updateDisplay();
+                saveGame();
+                showNotification('Usine améliorée ! Production accrue.');
+            } else {
+                showNotification('Pas assez d\'argent pour améliorer l\'usine !');
+            }
+        }
+        window.upgradeGasFactory = upgradeGasFactory;
+
+        // Production automatique usine à gasoil
+        let gasFactoryIntervalId = null;
+        function startGasFactoryInterval() {
+            if (gasFactoryIntervalId) clearInterval(gasFactoryIntervalId);
+            ensureGasFactory();
+            gasFactoryIntervalId = setInterval(() => {
+                ensureGasFactory();
+                gameState.fuel += gameState.gasFactory.productionPerCycle;
+                gameState.gasFactory.lastProductionTime = Date.now();
+                updateDisplay();
+                saveGame();
+                showNotification('Production de gasoil : +' + gameState.gasFactory.productionPerCycle + 'L');
+            }, gameState.gasFactory.productionInterval);
+        }
+        window.startGasFactoryInterval = startGasFactoryInterval;
+
+        // Appliquer les paramètres usine à gasoil depuis l'admin
+        function updateGasFactoryAdminFields() {
+            ensureGasFactory();
+            var intervalInput = document.getElementById('admin-gasfactory-interval');
+            var prodInput = document.getElementById('admin-gasfactory-prod');
+            var priceInput = document.getElementById('admin-gasfactory-upgrade-price');
+            if (intervalInput) intervalInput.value = Math.floor(gameState.gasFactory.productionInterval / 1000);
+            if (prodInput) prodInput.value = gameState.gasFactory.productionPerCycle;
+            if (priceInput) priceInput.value = gameState.gasFactory.nextUpgradePrice;
+        }
+        window.updateGasFactoryAdminFields = updateGasFactoryAdminFields;
+
+        function applyGasFactorySettings() {
+            const intervalSec = parseInt(document.getElementById('admin-gasfactory-interval').value) || 3600;
+            const interval = intervalSec * 1000;
+            const prod = parseInt(document.getElementById('admin-gasfactory-prod').value) || 2;
+            const price = parseInt(document.getElementById('admin-gasfactory-upgrade-price').value) || 500;
+            ensureGasFactory();
+            gameState.gasFactory.productionInterval = interval;
+            gameState.gasFactory.productionPerCycle = prod;
+            gameState.gasFactory.nextUpgradePrice = price;
+            showNotification('Paramètres usine appliqués !');
+            saveGame();
+            updateDisplay();
+            startGasFactoryInterval();
+            updateGasFactoryAdminFields();
+        }
+        window.applyGasFactorySettings = applyGasFactorySettings;
+
+        // Conversion ms -> texte humain
+        function msToHuman(ms) {
+            if (!ms) return '';
+            let min = Math.floor(ms/60000)%60;
+            let h = Math.floor(ms/3600000);
+            return (h>0?h+'h ':'') + (min>0?min+'min':'');
+        }
+        window.msToHuman = msToHuman;
+
+        // Sauvegarde/chargement usine à gasoil
+        const origSaveGame = saveGame;
+        saveGame = function() {
+            ensureGasFactory();
+            origSaveGame();
+        }
+        window.saveGame = saveGame;
+
+        const origLoadGame = loadGame;
+        loadGame = function() {
+            origLoadGame();
+            ensureGasFactory();
+            // Production offline usine à gasoil basée sur le timestamp global
+            const now = Date.now();
+            const last = gameState.timestamp || now;
+            const elapsed = now - last;
+            const cycles = Math.floor(elapsed / gameState.gasFactory.productionInterval);
+            if (cycles > 0) {
+                gameState.fuel += cycles * gameState.gasFactory.productionPerCycle;
+            }
+            updateGasFactoryDisplay();
+            startGasFactoryInterval();
+        }
+        window.loadGame = loadGame;
+
+        updateGasFactoryDisplay();
+
         // Fonctions d'affichage
         function updateDisplay() {
             document.getElementById('money').textContent = gameState.money;
@@ -872,6 +1018,7 @@
             updateDestinationsDisplay();
             updateShopDisplay();
             updateStatsDisplay();
+            updateGasFactoryDisplay();
         }
 
         function updateShipsDisplay() {
@@ -1033,6 +1180,8 @@
             `;
         }
 
+
+
         // Fonctions de navigation
         function showScreen(screenName) {
             currentScreen = screenName;
@@ -1045,6 +1194,7 @@
             
             document.getElementById(screenName + '-screen').classList.add('active');
             event.target.classList.add('active');
+            if(screenName === 'admin') updateGasFactoryAdminFields();
         }
 
         // Fonctions audio
@@ -1693,46 +1843,7 @@
 
         // Initialisation
         window.onload = function() {
-            const autoSave = localStorage.getItem('maritimeEmpire_auto');
-            if (autoSave) {
-                gameState = JSON.parse(autoSave);
-                
-                // Assurer la compatibilité
-                if (!gameState.adminSettings) {
-                    gameState.adminSettings = {
-                        rewardMultiplier: 1.0,
-                        startMoney: 1000,
-                        startFuel: 100,
-                        fuelPricePerLiter: 2
-                    };
-                }
-                
-                // Ajouter fuel si manquant
-                if (gameState.fuel === undefined) {
-                    gameState.fuel = 100;
-                }
-                
-                // Ajouter fuelConsumption aux navires existants
-                gameState.ships.forEach(ship => {
-                    if (ship.fuelConsumption === undefined) {
-                        ship.fuelConsumption = 1;
-                    }
-                });
-                
-                // Ajouter fuelCost aux destinations existantes
-                const defaultFuelCosts = [5, 15, 40, 120, 200, 150];
-                gameState.destinations.forEach((dest, index) => {
-                    if (dest.fuelCost === undefined) {
-                        dest.fuelCost = defaultFuelCosts[index] || 50;
-                    }
-                });
-                
-                // Ajouter totalFuelConsumed aux statistiques
-                if (gameState.statistics.totalFuelConsumed === undefined) {
-                    gameState.statistics.totalFuelConsumed = 0;
-                }
-            }
-            updateDisplay();
+            loadGame();
         };
 
         window.onclick = function(event) {
