@@ -389,6 +389,48 @@
             margin-top: 15px;
         }
 
+        .maintenance-progress {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .maintenance-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .maintenance-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .maintenance-fill.good {
+            background: linear-gradient(90deg, #00b894, #00cec9);
+        }
+
+        .maintenance-fill.warning {
+            background: linear-gradient(90deg, #fdcb6e, #e17055);
+        }
+
+        .maintenance-fill.critical {
+            background: linear-gradient(90deg, #d63031, #e84393);
+        }
+
+        .maintenance-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
         .fuel-option {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
@@ -498,6 +540,28 @@
 
         .admin-input::placeholder {
             color: rgba(255, 255, 255, 0.7);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn.maintenance-preventive {
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+            box-shadow: 0 4px 15px rgba(253, 203, 110, 0.3);
+        }
+
+        .btn.maintenance-emergency {
+            background: linear-gradient(135deg, #d63031, #e84393);
+            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.3);
         }
 
         .admin-btn {
@@ -666,6 +730,17 @@
                 </div>
 
                 <div class="admin-card">
+                    <h3>🔧 Maintenance Navires</h3>
+                    <label>Heures avant maintenance :</label>
+                    <input type="number" id="maintenanceHours" class="admin-input" placeholder="50" value="50" step="1">
+                    <label>Coût maintenance (€) :</label>
+                    <input type="number" id="maintenanceCost" class="admin-input" placeholder="200" value="200" step="10">
+                    <label>Pénalité urgence (€) :</label>
+                    <input type="number" id="maintenancePenalty" class="admin-input" placeholder="50" value="50" step="10">
+                    <button class="admin-btn" onclick="applyMaintenanceSettings()">Appliquer Maintenance</button>
+                </div>
+
+                <div class="admin-card">
                     <h3>🗺️ Gains Destinations</h3>
                     <label>Port Local :</label>
                     <input type="number" id="dest1Reward" class="admin-input" placeholder="50" value="50">
@@ -702,6 +777,23 @@
                     <label>Singapour :</label>
                     <input type="number" id="dest6Fuel" class="admin-input" placeholder="150" value="150">
                     <button class="admin-btn" onclick="applyDestinationFuel()">Appliquer Carburant</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>⏱️ Temps de Livraison (heures)</h3>
+                    <label>Port Local :</label>
+                    <input type="number" id="dest1Time" class="admin-input" placeholder="0.0833" value="0.0833" step="0.1">
+                    <label>Marseille :</label>
+                    <input type="number" id="dest2Time" class="admin-input" placeholder="2" value="2" step="0.1">
+                    <label>Londres :</label>
+                    <input type="number" id="dest3Time" class="admin-input" placeholder="6" value="6" step="0.1">
+                    <label>New York :</label>
+                    <input type="number" id="dest4Time" class="admin-input" placeholder="24" value="24" step="0.1">
+                    <label>Tokyo :</label>
+                    <input type="number" id="dest5Time" class="admin-input" placeholder="48" value="48" step="0.1">
+                    <label>Singapour :</label>
+                    <input type="number" id="dest6Time" class="admin-input" placeholder="36" value="36" step="0.1">
+                    <button class="admin-btn" onclick="applyDestinationTimes()">Appliquer Temps</button>
                 </div>
 
                 <div class="admin-card">
@@ -1021,6 +1113,38 @@
             updateGasFactoryDisplay();
         }
 
+        function getMaintenanceProgressBar(ship) {
+            const maintenanceHours = gameState.adminSettings?.maintenanceHours || 50;
+            const hoursNavigated = ship.hoursNavigated || 0;
+            const percentage = Math.min(100, (hoursNavigated / maintenanceHours) * 100);
+            
+            let fillClass = 'good';
+            let statusText = 'Bon état';
+            
+            if (percentage >= 85) {
+                fillClass = 'critical';
+                statusText = 'Critique';
+            } else if (percentage >= 60) {
+                fillClass = 'warning';
+                statusText = 'Attention';
+            }
+            
+            return `
+                <div class="maintenance-progress">
+                    <div class="maintenance-info">
+                        <span>🔧 Maintenance: ${Math.round(percentage)}%</span>
+                        <span>${statusText}</span>
+                    </div>
+                    <div class="maintenance-bar">
+                        <div class="maintenance-fill ${fillClass}" style="width: ${percentage}%"></div>
+                    </div>
+                    <div class="maintenance-info">
+                        <span>${Math.round(hoursNavigated)}h / ${maintenanceHours}h</span>
+                    </div>
+                </div>
+            `;
+        }
+
         function updateShipsDisplay() {
             const container = document.getElementById('ships-container');
             container.innerHTML = '';
@@ -1029,9 +1153,14 @@
                 const shipCard = document.createElement('div');
                 shipCard.className = `ship-card ${ship.status === 'traveling' ? 'traveling' : ''}`;
                 
-                let statusBadge = ship.status === 'available' ? 
-                    '<span class="status-badge status-available">Disponible</span>' :
-                    '<span class="status-badge status-traveling">En voyage</span>';
+                let statusBadge = '';
+                if (ship.status === 'available') {
+                    statusBadge = '<span class="status-badge status-available">Disponible</span>';
+                } else if (ship.status === 'traveling') {
+                    statusBadge = '<span class="status-badge status-traveling">En voyage</span>';
+                } else if (ship.status === 'maintenance_required') {
+                    statusBadge = '<span class="status-badge" style="background: #d63031;">Maintenance requise</span>';
+                }
 
                 let progressBar = '';
                 let actionButton = '';
@@ -1062,8 +1191,28 @@
                         </div>
                         <div>Arrivée dans: ${timeDisplay} vers ${ship.destination.name}</div>
                     `;
+                } else if (ship.status === 'maintenance_required') {
+                    const baseCost = gameState.adminSettings?.maintenanceCost || 200;
+                    const penalty = gameState.adminSettings?.maintenancePenalty || 50;
+                    const totalCost = baseCost + penalty;
+                    actionButton = `<button class="btn maintenance-emergency" onclick="performMaintenance(${ship.id})">⚠️ Maintenance d'urgence (${totalCost}€)</button>`;
                 } else {
-                    actionButton = `<button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Envoyer en Mission</button>`;
+                    const maintenanceHours = gameState.adminSettings?.maintenanceHours || 50;
+                    const hoursNavigated = ship.hoursNavigated || 0;
+                    const percentage = (hoursNavigated / maintenanceHours) * 100;
+                    const baseCost = gameState.adminSettings?.maintenanceCost || 200;
+                    
+                    let buttons = `<button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Envoyer en Mission</button>`;
+                    
+                    // Ajouter bouton maintenance préventive si >= 50%
+                    if (percentage >= 50) {
+                        buttons = `
+                            <button class="btn maintenance-preventive" onclick="performMaintenance(${ship.id}, true)">🔧 Maintenance (${baseCost}€)</button>
+                            <button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Mission</button>
+                        `;
+                    }
+                    
+                    actionButton = buttons;
                 }
 
                 shipCard.innerHTML = `
@@ -1084,7 +1233,12 @@
                             <div class="stat-value">${ship.fuelConsumption}x</div>
                             <div class="stat-label">Consommation</div>
                         </div>
+                        <div class="stat">
+                            <div class="stat-value">${Math.round(ship.hoursNavigated || 0)}h</div>
+                            <div class="stat-label">Navigation</div>
+                        </div>
                     </div>
+                    ${getMaintenanceProgressBar(ship)}
                     ${progressBar}
                     ${actionButton}
                 `;
@@ -1357,6 +1511,43 @@
             updateDisplay();
         }
 
+        function applyDestinationTimes() {
+            const times = [
+                parseFloat(document.getElementById('dest1Time').value) || 0.0833,
+                parseFloat(document.getElementById('dest2Time').value) || 2,
+                parseFloat(document.getElementById('dest3Time').value) || 6,
+                parseFloat(document.getElementById('dest4Time').value) || 24,
+                parseFloat(document.getElementById('dest5Time').value) || 48,
+                parseFloat(document.getElementById('dest6Time').value) || 36
+            ];
+            
+            gameState.destinations.forEach((dest, i) => {
+                if (i < times.length) {
+                    dest.distance = times[i];
+                }
+            });
+            
+            showNotification('Temps de livraison modifiés !');
+            updateDisplay();
+        }
+
+        function applyMaintenanceSettings() {
+            const maintenanceHours = parseInt(document.getElementById('maintenanceHours').value) || 50;
+            const maintenanceCost = parseInt(document.getElementById('maintenanceCost').value) || 200;
+            const maintenancePenalty = parseInt(document.getElementById('maintenancePenalty').value) || 50;
+            
+            if (!gameState.adminSettings) {
+                gameState.adminSettings = {};
+            }
+            
+            gameState.adminSettings.maintenanceHours = maintenanceHours;
+            gameState.adminSettings.maintenanceCost = maintenanceCost;
+            gameState.adminSettings.maintenancePenalty = maintenancePenalty;
+            
+            showNotification('Paramètres de maintenance appliqués !');
+            updateDisplay();
+        }
+
         function applyFuelSettings() {
             const fuelPrice = parseFloat(document.getElementById('fuelPrice').value) || 2;
             gameState.adminSettings.fuelPricePerLiter = fuelPrice;
@@ -1380,6 +1571,42 @@
             gameState.level = Math.floor(gameState.reputation / 100) + 1;
             showNotification('Réputation maximisée !');
             updateDisplay();
+        }
+
+        function initializeAdminFields() {
+            // Initialiser les champs avec les valeurs actuelles du jeu
+            if (gameState.destinations && gameState.destinations.length >= 6) {
+                // Temps de livraison
+                if(document.getElementById('dest1Time')) document.getElementById('dest1Time').value = gameState.destinations[0].distance || 0.0833;
+                if(document.getElementById('dest2Time')) document.getElementById('dest2Time').value = gameState.destinations[1].distance || 2;
+                if(document.getElementById('dest3Time')) document.getElementById('dest3Time').value = gameState.destinations[2].distance || 6;
+                if(document.getElementById('dest4Time')) document.getElementById('dest4Time').value = gameState.destinations[3].distance || 24;
+                if(document.getElementById('dest5Time')) document.getElementById('dest5Time').value = gameState.destinations[4].distance || 48;
+                if(document.getElementById('dest6Time')) document.getElementById('dest6Time').value = gameState.destinations[5].distance || 36;
+                
+                // Carburant par destination
+                if(document.getElementById('dest1Fuel')) document.getElementById('dest1Fuel').value = gameState.destinations[0].fuelCost || 5;
+                if(document.getElementById('dest2Fuel')) document.getElementById('dest2Fuel').value = gameState.destinations[1].fuelCost || 15;
+                if(document.getElementById('dest3Fuel')) document.getElementById('dest3Fuel').value = gameState.destinations[2].fuelCost || 40;
+                if(document.getElementById('dest4Fuel')) document.getElementById('dest4Fuel').value = gameState.destinations[3].fuelCost || 120;
+                if(document.getElementById('dest5Fuel')) document.getElementById('dest5Fuel').value = gameState.destinations[4].fuelCost || 200;
+                if(document.getElementById('dest6Fuel')) document.getElementById('dest6Fuel').value = gameState.destinations[5].fuelCost || 150;
+                
+                // Récompenses par destination
+                if(document.getElementById('dest1Reward')) document.getElementById('dest1Reward').value = gameState.destinations[0].reward || 50;
+                if(document.getElementById('dest2Reward')) document.getElementById('dest2Reward').value = gameState.destinations[1].reward || 150;
+                if(document.getElementById('dest3Reward')) document.getElementById('dest3Reward').value = gameState.destinations[2].reward || 400;
+                if(document.getElementById('dest4Reward')) document.getElementById('dest4Reward').value = gameState.destinations[3].reward || 1200;
+                if(document.getElementById('dest5Reward')) document.getElementById('dest5Reward').value = gameState.destinations[4].reward || 2500;
+                if(document.getElementById('dest6Reward')) document.getElementById('dest6Reward').value = gameState.destinations[5].reward || 1800;
+            }
+            
+            // Paramètres de maintenance
+            if (gameState.adminSettings) {
+                if(document.getElementById('maintenanceHours')) document.getElementById('maintenanceHours').value = gameState.adminSettings.maintenanceHours || 50;
+                if(document.getElementById('maintenanceCost')) document.getElementById('maintenanceCost').value = gameState.adminSettings.maintenanceCost || 200;
+                if(document.getElementById('maintenancePenalty')) document.getElementById('maintenancePenalty').value = gameState.adminSettings.maintenancePenalty || 50;
+            }
         }
 
         function resetToDefaults() {
@@ -1407,6 +1634,19 @@
             if(document.getElementById('dest4Fuel')) document.getElementById('dest4Fuel').value = 120;
             if(document.getElementById('dest5Fuel')) document.getElementById('dest5Fuel').value = 200;
             if(document.getElementById('dest6Fuel')) document.getElementById('dest6Fuel').value = 150;
+            
+            // Reset temps de livraison par destination (si les champs existent)
+            if(document.getElementById('dest1Time')) document.getElementById('dest1Time').value = 0.0833;
+            if(document.getElementById('dest2Time')) document.getElementById('dest2Time').value = 2;
+            if(document.getElementById('dest3Time')) document.getElementById('dest3Time').value = 6;
+            if(document.getElementById('dest4Time')) document.getElementById('dest4Time').value = 24;
+            if(document.getElementById('dest5Time')) document.getElementById('dest5Time').value = 48;
+            if(document.getElementById('dest6Time')) document.getElementById('dest6Time').value = 36;
+            
+            // Reset paramètres de maintenance (si les champs existent)
+            if(document.getElementById('maintenanceHours')) document.getElementById('maintenanceHours').value = 50;
+            if(document.getElementById('maintenanceCost')) document.getElementById('maintenanceCost').value = 200;
+            if(document.getElementById('maintenancePenalty')) document.getElementById('maintenancePenalty').value = 50;
             
             showNotification('Paramètres réinitialisés aux valeurs par défaut !');
         }
@@ -1503,7 +1743,9 @@
                             status: "available",
                             destination: null,
                             arrivalTime: null,
-                            earnings: 0
+                            earnings: 0,
+                            hoursNavigated: 0,
+                            needsMaintenance: false
                         }
                     ],
                     destinations: [
@@ -1602,7 +1844,9 @@
                         rewardMultiplier: 1.0,
                         startMoney: 1000,
                         startFuel: 100,
-                        fuelPricePerLiter: 2
+                        fuelPricePerLiter: 2,
+                        maintenanceHours: 50,
+                        maintenanceCost: 200
                     }
                 };
                 
@@ -1727,31 +1971,130 @@
             }
         }
 
+        function performMaintenance(shipId, isPreventive = false) {
+            const ship = gameState.ships.find(s => s.id === shipId);
+            if (!ship) return;
+            
+            const maintenanceHours = gameState.adminSettings?.maintenanceHours || 50;
+            const baseCost = gameState.adminSettings?.maintenanceCost || 200;
+            const penalty = gameState.adminSettings?.maintenancePenalty || 50;
+            
+            // Calculer le coût selon le type de maintenance
+            let totalCost = baseCost;
+            let message = '';
+            
+            if (ship.needsMaintenance || ship.hoursNavigated >= maintenanceHours) {
+                // Maintenance obligatoire (100%) - avec pénalité
+                totalCost = baseCost + penalty;
+                message = `⚠️ Maintenance d'urgence de ${ship.name} ! -${totalCost}€ (pénalité incluse)`;
+            } else {
+                // Maintenance préventive (50-99%) - coût normal
+                message = `🔧 Maintenance préventive de ${ship.name} ! -${totalCost}€`;
+            }
+            
+            if (gameState.money >= totalCost) {
+                gameState.money -= totalCost;
+                ship.hoursNavigated = 0;
+                ship.needsMaintenance = false;
+                ship.status = "available";
+                
+                showNotification(message);
+                updateDisplay();
+            } else {
+                showNotification(`⚠️ Pas assez d'argent pour la maintenance ! (${totalCost}€ nécessaires)`);
+            }
+        }
+
         function checkArrivals() {
+            const now = Date.now();
             gameState.ships.forEach(ship => {
                 if (ship.status === 'traveling') {
-                    const travelTime = ship.travelTime * 60 * 60 * 1000;
-                    const elapsed = Date.now() - ship.departureTime;
+                    let hasArrived = false;
+                    let destination = null;
                     
-                    if (elapsed >= travelTime) {
+                    // Nouveau système avec arrivalTime
+                    if (ship.arrivalTime && now >= ship.arrivalTime) {
+                        hasArrived = true;
+                        destination = gameState.destinations.find(d => d.id === ship.destination);
+                    }
+                    // Ancien système avec departureTime et travelTime (compatibilité)
+                    else if (ship.departureTime && ship.travelTime) {
+                        const travelTime = ship.travelTime * 60 * 60 * 1000;
+                        const elapsed = now - ship.departureTime;
+                        if (elapsed >= travelTime) {
+                            hasArrived = true;
+                            destination = ship.destination; // Dans l'ancien système, destination était l'objet complet
+                        }
+                    }
+                    
+                    if (hasArrived && destination) {
                         ship.status = 'available';
-                        gameState.money += ship.earnings;
-                        gameState.reputation += ship.destination.reputation;
-                        gameState.statistics.totalEarnings += ship.earnings;
-                        gameState.statistics.totalTrips += 1;
-                        gameState.statistics.totalDistance += ship.destination.distance;
                         
+                        // Calculer la récompense
+                        let reward = 0;
+                        let travelHours = 0;
+                        
+                        if (typeof destination === 'object' && destination.reward) {
+                            // Ancien format - destination est l'objet complet
+                            reward = Math.floor(destination.reward * (gameState.adminSettings?.rewardMultiplier || 1));
+                            travelHours = destination.distance / (ship.speed || 1);
+                            gameState.reputation += destination.reputation;
+                        } else {
+                            // Nouveau format - destination est l'ID
+                            const destObj = gameState.destinations.find(d => d.id === destination);
+                            if (destObj) {
+                                reward = Math.floor(destObj.reward * (gameState.adminSettings?.rewardMultiplier || 1));
+                                travelHours = destObj.distance / (ship.speed || 1);
+                                gameState.reputation += destObj.reputation;
+                                destination = destObj; // Pour les notifications
+                            }
+                        }
+                        
+                        gameState.money += reward;
                         gameState.level = Math.floor(gameState.reputation / 100) + 1;
+                        ship.earnings = (ship.earnings || 0) + reward;
                         
-                        playSound('arrival');
-                        setTimeout(() => playSound('money'), 500);
+                        // Ajouter les heures de navigation
+                        ship.hoursNavigated = (ship.hoursNavigated || 0) + travelHours;
                         
-                        showNotification(`${ship.name} est arrivé! +${ship.earnings}€`);
+                        // Vérifier si maintenance nécessaire
+                        const maintenanceHours = gameState.adminSettings?.maintenanceHours || 50;
+                        if (ship.hoursNavigated >= maintenanceHours) {
+                            ship.needsMaintenance = true;
+                            ship.status = "maintenance_required";
+                            showNotification(`⚠️ ${ship.name} nécessite une maintenance !`);
+                        }
                         
+                        // Ajouter aux statistiques
+                        if (!gameState.statistics) gameState.statistics = { totalTrips: 0, totalEarnings: 0, totalDistance: 0, totalFuelConsumed: 0 };
+                        gameState.statistics.totalTrips = (gameState.statistics.totalTrips || 0) + 1;
+                        gameState.statistics.totalEarnings = (gameState.statistics.totalEarnings || 0) + reward;
+                        gameState.statistics.totalDistance = (gameState.statistics.totalDistance || 0) + travelHours;
+                        
+                        // Ajouter la consommation de carburant
+                        let fuelConsumed = 0;
+                        if (typeof destination === 'object' && destination.fuelCost) {
+                            fuelConsumed = Math.ceil(destination.fuelCost * (ship.fuelConsumption || 1));
+                        } else {
+                            const destObj = gameState.destinations.find(d => d.id === destination || (typeof destination === 'object' && d.id === destination.id));
+                            if (destObj) {
+                                fuelConsumed = Math.ceil(destObj.fuelCost * (ship.fuelConsumption || 1));
+                            }
+                        }
+                        gameState.statistics.totalFuelConsumed = (gameState.statistics.totalFuelConsumed || 0) + fuelConsumed;
+                        
+                        // Notifications et sons
+                        if (ship.status === "available") {
+                            showNotification(`${ship.name} est arrivé à ${destination.name} ! +${reward}€`);
+                            playSound('arrival');
+                            setTimeout(() => playSound('money'), 500);
+                        }
+                        
+                        // Nettoyer les propriétés de voyage
                         ship.destination = null;
+                        ship.arrivalTime = null;
                         ship.departureTime = null;
                         ship.travelTime = null;
-                        ship.earnings = 0;
                     }
                 }
             });
@@ -1796,7 +2139,9 @@
                         rewardMultiplier: 1.0,
                         startMoney: 1000,
                         startFuel: 100,
-                        fuelPricePerLiter: 2
+                        fuelPricePerLiter: 2,
+                        maintenanceHours: 50,
+                        maintenanceCost: 200
                     };
                 }
                 
@@ -1809,6 +2154,13 @@
                 gameState.ships.forEach(ship => {
                     if (ship.fuelConsumption === undefined) {
                         ship.fuelConsumption = 1;
+                    }
+                    // Ajouter les propriétés de maintenance aux navires existants
+                    if (ship.hoursNavigated === undefined) {
+                        ship.hoursNavigated = 0;
+                    }
+                    if (ship.needsMaintenance === undefined) {
+                        ship.needsMaintenance = false;
                     }
                 });
                 
@@ -1826,9 +2178,11 @@
                 }
                 
                 updateDisplay();
+                initializeAdminFields(); // Synchroniser les champs admin avec les valeurs du jeu
                 showNotification('Jeu chargé avec succès!');
             } else {
                 showNotification('Aucune sauvegarde trouvée');
+                initializeAdminFields(); // Initialiser même sans sauvegarde
             }
         }
 
