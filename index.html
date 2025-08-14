@@ -204,20 +204,22 @@
         }
 
         .resource {
-            background: var(--glass-bg);
+            background: rgba(0, 20, 40, 0.95);
             backdrop-filter: blur(10px);
             border: 2px solid var(--primary-color);
-            padding: 10px 16px;
+            padding: 12px 18px;
             border-radius: var(--border-radius);
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             transition: var(--transition);
             box-shadow: var(--shadow-light);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             position: relative;
             overflow: hidden;
+            color: #ffffff;
+            text-shadow: 0 0 15px currentColor, 0 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .resource::before {
@@ -240,13 +242,16 @@
             transform: translateY(-2px);
             box-shadow: var(--shadow-medium);
             border-color: var(--accent-color);
-            text-shadow: 0 0 10px currentColor;
+            text-shadow: 0 0 20px currentColor, 0 2px 4px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 30, 60, 0.98);
         }
 
         .fuel-resource {
             border-color: var(--warning-color);
-            color: var(--warning-color);
-            text-shadow: 0 0 10px var(--warning-color);
+            color: #ffff00;
+            background: rgba(40, 40, 0, 0.95);
+            text-shadow: 0 0 15px #ffff00, 0 2px 4px rgba(0, 0, 0, 0.8);
+            font-weight: 700;
         }
 
         .fuel-resource:hover {
@@ -3985,11 +3990,23 @@
             }
         }
 
-        function performMaintenance(shipId) {
+        function performMaintenance(shipId, isPreventive = false) {
             const ship = gameState.ships.find(s => s.id === shipId);
-            if (!ship || !ship.needsMaintenance) return;
+            if (!ship) return;
             
-            const cost = gameState.adminSettings?.maintenanceCost || 200;
+            // Vérifier si le navire est en voyage
+            if (ship.status === 'traveling') {
+                showNotification('Impossible de faire la maintenance pendant un voyage!');
+                return;
+            }
+            
+            let cost = gameState.adminSettings?.maintenanceCost || 200;
+            
+            // Maintenance d'urgence (obligatoire) avec pénalité
+            if (ship.needsMaintenance || ship.status === 'maintenance_required') {
+                const penalty = gameState.adminSettings?.maintenancePenalty || 50;
+                cost += penalty;
+            }
             
             if (gameState.money >= cost) {
                 gameState.money -= cost;
@@ -3998,12 +4015,18 @@
                 ship.status = 'available';
                 
                 updateDisplay();
-                showNotification(`${ship.name} : maintenance effectuée pour ${cost}€`);
+                
+                if (isPreventive) {
+                    showNotification(`🔧 ${ship.name} : maintenance préventive effectuée pour ${cost}€`);
+                } else {
+                    showNotification(`⚠️ ${ship.name} : maintenance d'urgence effectuée pour ${cost}€`);
+                }
+                
                 playSound('success');
                 saveGame();
             } else {
                 showNotification('Pas assez d\'argent pour la maintenance!');
-                // Son d'erreur désactivé pour version stable
+                playSound('error');
             }
         }
 
