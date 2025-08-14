@@ -12,19 +12,19 @@
         }
 
         body {
-            font-family: 'Orbitron', 'Segoe UI', monospace, sans-serif;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
-                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
             background-attachment: fixed;
-            color: #00ffff;
+            color: var(--text-color);
             overflow-x: hidden;
-            touch-action: pan-y pan-x pinch-zoom;
-            line-height: 1.6;
-            position: relative;
+            touch-action: pan-y; /* Permettre le défilement vertical uniquement */
             -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
+            /* Optimisations fluidité */
+            will-change: scroll-position;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
 
         /* Optimisations spécifiques mobile */
@@ -262,15 +262,28 @@
             padding: 0 5px;
             touch-action: pan-y; /* Permettre le défilement vertical */
             -webkit-overflow-scrolling: touch;
+            /* Optimisations fluidité */
+            will-change: transform;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         /* Optimisations navigation mobile */
         @media (max-width: 768px) {
+            body {
+                background-attachment: scroll; /* Plus fluide sur mobile */
+            }
+            
             .navigation {
                 grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
                 gap: 8px;
                 padding: 0 10px;
                 margin-bottom: 20px;
+                /* Optimisations supplémentaires mobile */
+                contain: layout style paint;
+                isolation: isolate;
             }
         }
 
@@ -279,6 +292,9 @@
                 grid-template-columns: repeat(2, 1fr); /* 2 colonnes sur très petits écrans */
                 gap: 6px;
                 padding: 0 8px;
+                /* Performance maximale sur petits écrans */
+                transform: translate3d(0, 0, 0);
+                -webkit-transform: translate3d(0, 0, 0);
             }
         }
 
@@ -306,6 +322,14 @@
             touch-action: manipulation; /* Optimiser pour les taps */
             -webkit-tap-highlight-color: rgba(0, 255, 255, 0.3);
             user-select: none;
+            /* Optimisations fluidité */
+            will-change: transform, box-shadow;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Optimisations boutons navigation mobile */
@@ -315,6 +339,13 @@
                 font-size: 12px;
                 min-height: 48px; /* Taille minimale recommandée pour mobile */
                 gap: 6px;
+                /* Réduction des effets sur mobile pour plus de fluidité */
+                backdrop-filter: blur(5px);
+                transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            }
+            
+            .nav-btn::before {
+                display: none; /* Supprimer l'effet de balayage sur mobile */
             }
         }
 
@@ -324,6 +355,14 @@
                 font-size: 11px;
                 min-height: 52px; /* Encore plus grand sur très petits écrans */
                 letter-spacing: 0.5px;
+                /* Performance maximale */
+                backdrop-filter: none;
+                background: rgba(0, 20, 40, 0.8);
+                transition: transform 0.15s ease-out;
+            }
+            
+            .nav-btn:active {
+                transform: scale(0.98) translateZ(0);
             }
         }
 
@@ -344,7 +383,7 @@
         }
 
         .nav-btn:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) translateZ(0);
             box-shadow: var(--shadow-medium);
             border-color: var(--accent-color);
             color: var(--accent-color);
@@ -2273,8 +2312,8 @@
                     
                     let buttons = `<button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Envoyer en Mission</button>`;
                     
-                    // Ajouter bouton maintenance préventive si >= 50%
-                    if (percentage >= 50) {
+                    // Ajouter bouton maintenance préventive si >= 20%
+                    if (percentage >= 20) {
                         buttons = `
                             <button class="btn maintenance-preventive" onclick="performMaintenance(${ship.id}, true)">🔧 Maintenance (${baseCost}€)</button>
                             <button class="btn" onclick="selectShipForTravel(${ship.id})">🚀 Mission</button>
