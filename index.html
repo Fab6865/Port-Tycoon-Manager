@@ -2209,7 +2209,7 @@
             const shipToSell = availableShips[index];
             const sellPrice = Math.floor(calculateShipValue(shipToSell) * 0.7);
             
-            if (confirm(`Vendre le ${shipToShip.name} pour ${sellPrice}€ ?`)) {
+            if (confirm(`Vendre le ${shipToSell.name} pour ${sellPrice}€ ?`)) {
                 gameState.ships = gameState.ships.filter(ship => ship.id !== shipToSell.id);
                 gameState.money += sellPrice;
                 showNotification(`Vente effectuée ! +${sellPrice}€`);
@@ -2217,9 +2217,12 @@
             }
         }
         
-        // Calculer la valeur d'un bateau
+        // Calculer la valeur d'un bateau avec un facteur aléatoire pour varier les prix
         function calculateShipValue(ship) {
-            return (ship.capacity * 20) + (ship.speed * 1000) - (ship.fuelConsumption * 50);
+            const baseValue = (ship.capacity * 20) + (ship.speed * 1000) - (ship.fuelConsumption * 50);
+            // Ajout d'un facteur aléatoire entre 0.8 et 1.2 pour varier les prix
+            const randomFactor = 0.8 + Math.random() * 0.4;
+            return Math.floor(baseValue * randomFactor);
         }
         
         // Fonctions de gestion des bateaux
